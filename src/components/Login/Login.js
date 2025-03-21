@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import './Login.css';
 
 const AuthForm = () => {
@@ -10,12 +11,25 @@ const AuthForm = () => {
     phone: ''
   });
 
+  const navigate = useNavigate();
+
   const toggleForm = () => setIsLogin(!isLogin);
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    // Lógica de envío temporal
+    // Lógica de envío temporal (puedes reemplazar esto con tu autenticación real)
     console.log(formData);
+    
+    // Simulamos un login exitoso para redirigir
+    if (isLogin) {
+      // Aquí podrías validar las credenciales si tuvieras un backend
+      navigate('/home'); // Redirige a /home después del login
+    } else {
+      // Para el registro, podrías mostrar un mensaje o redirigir después de registrar
+      console.log('Usuario registrado:', formData);
+      // Opcional: redirigir después del registro también
+      navigate('/home');
+    }
   };
 
   const handleChange = (e) => {

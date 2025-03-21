@@ -16,7 +16,6 @@ body {
 
 .app-container {
   display: flex;
-  min-height: 100vh;
 }
 
 .main-content {
@@ -24,4 +23,10 @@ body {
   margin-left: 250px;
   padding: 2rem;
   background-color: #f7fafc;
+}
+
+/* Opcional: estilos específicos para el login */
+.login-container {
+  width: 100%;
+  height: 100%;
 }

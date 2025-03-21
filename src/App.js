@@ -8,15 +8,29 @@ import './App.css';
 function App() {
   return (
     <Router>
-      <div className="app-container">
-        <Sidebar />
-        <main className="main-content">
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/login" element={<AuthForm />} />
-          </Routes>
-        </main>
-      </div>
+      <Routes>
+        {/* Ruta raíz para el Login sin Sidebar */}
+        <Route 
+          path="/" 
+          element={
+            <div className="app-container">
+              <AuthForm />
+            </div>
+          } 
+        />
+        {/* Ruta para el Home con Sidebar */}
+        <Route 
+          path="/home" 
+          element={
+            <div className="app-container">
+              <Sidebar />
+              <main className="main-content">
+                <Home />
+              </main>
+            </div>
+          } 
+        />
+      </Routes>
     </Router>
   );
 }
