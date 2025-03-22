@@ -1,5 +1,6 @@
 import React from 'react';
 import { MapPin, AlertTriangle, Clock, CheckCircle } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import './Home.css';
 
 const Home = () => {
@@ -54,7 +55,9 @@ const Home = () => {
         <h2>¿Detectaste algún problema en tu zona?</h2>
         <p>Ayuda a tu comunidad reportando incidentes para que podamos trabajar en solucionarlos.</p>
         <button className="report-button">
-          Reportar Incidente
+        <Link to="/incidents" className="report-button">
+            Reportar Incidente
+          </Link>
         </button>
       </div>
     </div>

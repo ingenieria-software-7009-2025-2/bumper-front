@@ -1,5 +1,6 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import Incidents from './components/Incidents/Incidents';
 import AuthForm from './components/Login/Login';
 import Home from './components/Home/Home';
 import Sidebar from './components/Layout/Sidebar';
@@ -30,6 +31,7 @@ function App() {
             </div>
           } 
         />
+        <Route path="/incidents" element={<Incidents />} />
       </Routes>
     </Router>
   );

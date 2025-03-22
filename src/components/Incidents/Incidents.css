@@ -1,0 +1,135 @@
+.incidents-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+  }
+  
+  .header-section {
+    margin-bottom: 2rem;
+    position: relative;
+  }
+  
+  .back-button {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #2c7a7b;
+    text-decoration: none;
+    margin-bottom: 1rem;
+  }
+  
+  .header-section h1 {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    color: #2d3748;
+  }
+  
+  .incidents-content {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+  }
+  
+  .incident-form {
+    background: white;
+    padding: 2rem;
+    border-radius: 10px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  }
+  
+  .form-group {
+    margin-bottom: 1.5rem;
+  }
+  
+  .form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    color: #2d3748;
+  }
+  
+  .form-group select,
+  .form-group input {
+    width: 100%;
+    padding: 0.75rem;
+    border: 2px solid #e2e8f0;
+    border-radius: 6px;
+    font-size: 1rem;
+  }
+  
+  .form-group select:focus,
+  .form-group input:focus {
+    outline: none;
+    border-color: #2c7a7b;
+  }
+  
+  .submit-button {
+    background: #2c7a7b;
+    color: white;
+    padding: 1rem 2rem;
+    border: none;
+    border-radius: 6px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    width: 100%;
+    transition: background 0.3s ease;
+  }
+  
+  .submit-button:hover {
+    background: #3182ce;
+  }
+  
+  .incidents-list {
+    background: white;
+    padding: 2rem;
+    border-radius: 10px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  }
+  
+  .incidents-list h2 {
+    margin-bottom: 1.5rem;
+    color: #2d3748;
+  }
+  
+  .list-container {
+    max-height: 600px;
+    overflow-y: auto;
+  }
+  
+  .incident-card {
+    background: #f7fafc;
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    border-left: 4px solid #2c7a7b;
+  }
+  
+  .card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+  }
+  
+  .incident-type {
+    font-weight: 600;
+    color: #2c7a7b;
+  }
+  
+  .incident-time {
+    color: #718096;
+    font-size: 0.9rem;
+  }
+  
+  .card-body p {
+    margin: 0.3rem 0;
+    color: #4a5568;
+  }
+  
+  @media (max-width: 768px) {
+    .incidents-content {
+      grid-template-columns: 1fr;
+    }
+  }
