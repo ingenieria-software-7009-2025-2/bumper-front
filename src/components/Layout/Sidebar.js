@@ -1,11 +1,41 @@
 import React from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom'; // Añadimos useNavigate
 import { Home, UserCircle, AlertCircle, Info, LogOut } from 'lucide-react';
 import './Sidebar.css';
 
 const Sidebar = () => {
-  const handleLogout = () => {
-    console.log('Cerrar sesión');
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    const correo = localStorage.getItem('userCorreo');
+    if (!correo) {
+      console.log('No hay usuario autenticado');
+      navigate('/'); // Redirigir al login si no hay correo
+      return;
+    }
+
+    try {
+      const response = await fetch('http://localhost:8080/v1/users/logout', {
+        method: 'POST',
+        headers: {
+          correo: correo, // Enviar el correo como header
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al cerrar sesión');
+      }
+
+      // Limpiar el estado de autenticación en el frontend
+      localStorage.removeItem('userCorreo');
+      console.log('Sesión cerrada exitosamente');
+      navigate('/'); // Redirigir al login
+    } catch (err) {
+      console.error('Error en el logout:', err.message);
+      // Aunque falle el backend, limpiamos localStorage y redirigimos
+      localStorage.removeItem('userCorreo');
+      navigate('/');
+    }
   };
 
   return (
@@ -14,7 +44,7 @@ const Sidebar = () => {
         <h1 className="sidebar-title">Bumper APP</h1>
         
         <nav className="sidebar-nav">
-          <NavLink to="/" className="nav-link">
+          <NavLink to="/home" className="nav-link">
             <Home className="nav-icon" />
             Inicio
           </NavLink>
