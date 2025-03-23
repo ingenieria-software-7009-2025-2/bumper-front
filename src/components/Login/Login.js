@@ -5,12 +5,12 @@ import './Login.css';
 const AuthForm = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [formData, setFormData] = useState({
-    name: '',
+    nombre: '',
+    apellido: '',
     email: '',
     password: '',
-    phone: ''
   });
-  const [error, setError] = useState(''); // Estado para manejar errores
+  const [error, setError] = useState('');
 
   const navigate = useNavigate();
 
@@ -23,8 +23,8 @@ const AuthForm = () => {
     e.preventDefault();
     setError(''); // Limpiar errores previos
 
-    const apiUrl = 'http://localhost:8080'; // URL base del backend (ajusta si usas Supabase)
-    
+    const apiUrl = 'http://localhost:8080'; // URL base del backend
+
     try {
       if (isLogin) {
         // Login: POST /v1/users/login
@@ -46,9 +46,8 @@ const AuthForm = () => {
 
         const userData = await response.json();
         console.log('Usuario logueado:', userData);
-        // Guardar el correo en el estado global o localStorage si lo necesitas
         localStorage.setItem('userCorreo', userData.correo);
-        navigate('/home'); // Redirigir a home tras login exitoso
+        navigate('/home');
       } else {
         // Registro: POST /v1/users/create
         const response = await fetch(`${apiUrl}/v1/users/create`, {
@@ -57,13 +56,12 @@ const AuthForm = () => {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            nombre: formData.name,
-            apellido: formData.name.split(' ')[1] || 'Usuario', // Simulamos apellido si no se provee
+            nombre: formData.nombre,
+            apellido: formData.apellido,
             correo: formData.email,
             password: formData.password,
             token: 'inactivo', // Valor por defecto
             numeroIncidentes: 0, // Valor por defecto
-            phone: formData.phone, // No usado en el backend actual, pero lo enviamos
           }),
         });
 
@@ -74,10 +72,11 @@ const AuthForm = () => {
 
         const newUser = await response.json();
         console.log('Usuario registrado:', newUser);
-        navigate('/home'); // Redirigir a home tras registro exitoso
+        localStorage.setItem('userCorreo', newUser.correo); // Guardar correo para autenticación inmediata
+        navigate('/home');
       }
     } catch (err) {
-      setError(err.message); // Mostrar error al usuario
+      setError(err.message);
       console.error('Error en la solicitud:', err);
     }
   };
@@ -93,23 +92,35 @@ const AuthForm = () => {
     <div className="auth-container">
       <div className={`auth-box ${isLogin ? 'login' : 'register'}`}>
         <h1>{isLogin ? 'Inicio de Sesión' : 'Registro'}</h1>
-        
-        {error && <p className="error-message">{error}</p>} {/* Mostrar errores */}
+
+        {error && <p className="error-message">{error}</p>}
 
         <form onSubmit={handleSubmit}>
           {!isLogin && (
-            <div className="form-group">
-              <input
-                type="text"
-                name="name"
-                placeholder="Nombre completo"
-                value={formData.name}
-                onChange={handleChange}
-                required
-              />
-            </div>
+            <>
+              <div className="form-group">
+                <input
+                  type="text"
+                  name="nombre"
+                  placeholder="Nombre"
+                  value={formData.nombre}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <input
+                  type="text"
+                  name="apellido"
+                  placeholder="Apellido"
+                  value={formData.apellido}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
+            </>
           )}
-          
+
           <div className="form-group">
             <input
               type="email"
@@ -120,7 +131,7 @@ const AuthForm = () => {
               required
             />
           </div>
-          
+
           <div className="form-group">
             <input
               type="password"
@@ -131,18 +142,6 @@ const AuthForm = () => {
               required
             />
           </div>
-
-          {!isLogin && (
-            <div className="form-group">
-              <input
-                type="tel"
-                name="phone"
-                placeholder="Teléfono"
-                value={formData.phone}
-                onChange={handleChange}
-              />
-            </div>
-          )}
 
           <button type="submit">
             {isLogin ? 'Ingresar' : 'Registrarse'}
