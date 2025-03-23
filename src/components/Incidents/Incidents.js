@@ -43,7 +43,7 @@ const Incidents = () => {
   return (
     <div className="incidents-container">
       <div className="header-section">
-        <Link to="/" className="back-button">
+        <Link to="/home" className="back-button">
           <ArrowLeft size={20} />
           Volver al inicio
         </Link>
