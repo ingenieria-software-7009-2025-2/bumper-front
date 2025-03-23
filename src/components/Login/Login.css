@@ -92,6 +92,13 @@
     text-decoration: underline;
   }
   
+  .error-message {
+    color: red;
+    font-size: 14px;
+    margin: 10px 0;
+    text-align: center;
+  }
+  
   @media (max-width: 480px) {
     .auth-box {
       padding: 1.5rem;
