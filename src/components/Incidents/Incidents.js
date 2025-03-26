@@ -24,32 +24,24 @@ const Incidents = () => {
         navigate('/');
         return;
       }
-
+  
       try {
-        // Primero obtenemos el ID del usuario desde /v1/users/me
         const userResponse = await fetch('http://localhost:8080/v1/users/me', {
           method: 'GET',
-          headers: {
-            correo: correo,
-          },
+          headers: { correo },
         });
-
         if (!userResponse.ok) {
           throw new Error('Error al obtener datos del usuario');
         }
-
         const userData = await userResponse.json();
         const usuarioId = userData.id;
-
-        // Luego cargamos los incidentes del usuario
+  
         const incidentsResponse = await fetch(`http://localhost:8080/v1/incidentes/usuario/${usuarioId}`, {
           method: 'GET',
         });
-
         if (!incidentsResponse.ok) {
           throw new Error('Error al cargar los incidentes');
         }
-
         const incidentsData = await incidentsResponse.json();
         setIncidents(incidentsData);
         setLoading(false);
@@ -58,45 +50,40 @@ const Incidents = () => {
         setLoading(false);
       }
     };
-
+  
     fetchIncidents();
-  }, [navigate]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Array vacío para ejecutarse solo al montar
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
-
+  
     const correo = localStorage.getItem('userCorreo');
     if (!correo) {
       setError('No estás autenticado. Por favor, inicia sesión.');
       navigate('/');
       return;
     }
-
+  
     try {
-      // Obtener el ID del usuario
       const userResponse = await fetch('http://localhost:8080/v1/users/me', {
         method: 'GET',
-        headers: {
-          correo: correo,
-        },
+        headers: { correo },
       });
-
       if (!userResponse.ok) {
         throw new Error('Error al obtener datos del usuario');
       }
-
       const userData = await userResponse.json();
       const usuarioId = userData.id;
-
-      // Crear el incidente
+  
       const newIncident = {
         usuarioId: usuarioId,
-        tipoIncidente: formData.type.toUpperCase(), // Ajustar al formato del backend
+        tipoIncidente: formData.type.toUpperCase(),
         ubicacion: formData.location,
-        tipoVialidad: formData.roadType.toUpperCase(), // Ajustar al formato del backend
+        tipoVialidad: formData.roadType.toUpperCase(),
       };
-
+  
       const response = await fetch('http://localhost:8080/v1/incidentes', {
         method: 'POST',
         headers: {
@@ -104,14 +91,25 @@ const Incidents = () => {
         },
         body: JSON.stringify(newIncident),
       });
-
+  
       if (!response.ok) {
         throw new Error('Error al reportar el incidente');
       }
-
-      const createdIncident = await response.json();
-      setIncidents([...incidents, createdIncident]); // Añadir el nuevo incidente a la lista
-      setFormData({ type: '', location: '', time: '', roadType: '' }); // Limpiar formulario
+  
+      // Recargar los incidentes desde el backend en lugar de actualizar localmente
+      const fetchIncidents = async () => {
+        const incidentsResponse = await fetch(`http://localhost:8080/v1/incidentes/usuario/${usuarioId}`, {
+          method: 'GET',
+        });
+        if (!incidentsResponse.ok) {
+          throw new Error('Error al recargar los incidentes');
+        }
+        const incidentsData = await incidentsResponse.json();
+        setIncidents(incidentsData);
+      };
+      await fetchIncidents();
+  
+      setFormData({ type: '', location: '', time: '', roadType: '' });
     } catch (err) {
       setError(err.message);
     }
@@ -132,7 +130,7 @@ const Incidents = () => {
     return (
       <div className="incidents-container">
         <p className="error-message">{error}</p>
-        <Link to="/" className="back-button">
+        <Link to="/home" className="back-button">
           <ArrowLeft size={20} /> Volver al inicio de sesión
         </Link>
       </div>

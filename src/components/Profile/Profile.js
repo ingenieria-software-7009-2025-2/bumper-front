@@ -65,7 +65,7 @@ const Profile = () => {
     return (
       <div className="profile-container">
         <p className="error-message">{error}</p>
-        <Link to="/" className="back-button">
+        <Link to="/home" className="back-button">
           <ArrowLeft size={20} /> Volver al inicio de sesión
         </Link>
       </div>
