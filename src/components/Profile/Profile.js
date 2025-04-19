@@ -1,61 +1,74 @@
 import React, { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, UserCircle, AlertCircle } from "lucide-react"; // Cambiamos MapPin por AlertCircle
+import { Link } from "react-router-dom";
+import { ArrowLeft, UserCircle, AlertCircle } from "lucide-react";
+import { fetchWithAuth } from '../../services/api';
 import "./Profile.css";
 
 const Profile = () => {
-  const [userData, setUserData] = useState(null);
-  const [incidents, setIncidents] = useState([]); // Estado para los incidentes
+  const [user, setUser] = useState(null);
+  const [incidents, setIncidents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const navigate = useNavigate();
 
-  // Recuperar datos del usuario e incidentes al cargar el componente
+  // Función para formatear fecha y hora
+  const formatDateTime = (dateString) => {
+    return new Date(dateString).toLocaleString('es-MX', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
   useEffect(() => {
     const fetchUserDataAndIncidents = async () => {
-      const correo = localStorage.getItem("userCorreo");
-      if (!correo) {
+      const userId = localStorage.getItem("userId");
+      if (!userId) {
         setError("No estás autenticado. Por favor, inicia sesión.");
-        navigate("/");
         return;
       }
 
       try {
         // Obtener datos del usuario
-        const userResponse = await fetch("http://localhost:8080/v1/users/me", {
+        const userResponse = await fetchWithAuth(`http://localhost:8080/v1/users/${userId}`, {
           method: "GET",
-          headers: {
-            correo: correo,
-          },
         });
-
-        if (!userResponse.ok) {
-          throw new Error("Error al recuperar los datos del usuario");
-        }
-
-        const userData = await userResponse.json();
-        setUserData(userData);
+        const userJson = await userResponse.json();
+        setUser(userJson.usuario);
 
         // Obtener incidentes del usuario
-        const incidentsResponse = await fetch(`http://localhost:8080/v1/incidentes/usuario/${userData.id}`, {
-          method: "GET",
-        });
+        const incidentsResponse = await fetchWithAuth(
+          `http://localhost:8080/v1/incidentes/usuario/${userId}`,
+          { method: "GET" }
+        );
+        const incidentsData = await incidentsResponse.json();
 
-        if (!incidentsResponse.ok) {
-          throw new Error("Error al cargar los incidentes");
+        // DEBUG: Muestra la estructura real de la respuesta
+        console.log("Respuesta de incidentes:", incidentsData);
+
+        // Extrae el array de incidentes según la estructura real
+        let incidentesArray = [];
+        if (Array.isArray(incidentsData)) {
+          incidentesArray = incidentsData;
+        } else if (Array.isArray(incidentsData.incidentes)) {
+          incidentesArray = incidentsData.incidentes;
+        } else if (Array.isArray(incidentsData.data)) {
+          incidentesArray = incidentsData.data;
+        } else if (incidentsData.content && Array.isArray(incidentsData.content)) {
+          incidentesArray = incidentsData.content;
         }
 
-        const incidentsData = await incidentsResponse.json();
-        setIncidents(incidentsData);
-        setLoading(false);
+        setIncidents(incidentesArray);
       } catch (err) {
         setError(err.message);
+      } finally {
         setLoading(false);
       }
     };
 
     fetchUserDataAndIncidents();
-  }, [navigate]);
+  }, []);
 
   if (loading) {
     return <div className="profile-container">Cargando datos del usuario...</div>;
@@ -65,8 +78,8 @@ const Profile = () => {
     return (
       <div className="profile-container">
         <p className="error-message">{error}</p>
-        <Link to="/home" className="back-button">
-          <ArrowLeft size={20} /> Volver al inicio de sesión
+        <Link to="/" className="back-button">
+          <ArrowLeft size={20} /> Volver al inicio
         </Link>
       </div>
     );
@@ -93,22 +106,22 @@ const Profile = () => {
           <form className="profile-form">
             <div className="form-group">
               <label>Nombre</label>
-              <input type="text" value={userData.nombre} readOnly />
+              <input type="text" value={user?.nombre || ''} readOnly />
             </div>
 
             <div className="form-group">
               <label>Apellido</label>
-              <input type="text" value={userData.apellido} readOnly />
+              <input type="text" value={user?.apellido || ''} readOnly />
             </div>
 
             <div className="form-group">
               <label>Correo electrónico</label>
-              <input type="email" value={userData.correo} readOnly />
+              <input type="email" value={user?.correo || ''} readOnly />
             </div>
 
             <div className="form-group">
               <label>Contraseña</label>
-              <input type="password" value={userData.password} readOnly />
+              <input type="password" value="********" readOnly />
             </div>
 
             <button type="button" className="save-button" disabled>
@@ -121,7 +134,7 @@ const Profile = () => {
         <div className="incidents-list">
           <div className="incidents-header">
             <AlertCircle className="incidents-icon" />
-            <h2>Incidentes Reportados</h2>
+            <h2>Incidentes Reportados ({incidents.length})</h2>
           </div>
           <div className="list-container">
             {incidents.length === 0 ? (
@@ -132,12 +145,13 @@ const Profile = () => {
                   <div className="card-header">
                     <span className="incident-type">{incident.tipoIncidente}</span>
                     <span className="incident-time">
-                      {new Date(incident.horaIncidente).toLocaleTimeString()}
+                      {formatDateTime(incident.horaIncidente)}
                     </span>
                   </div>
                   <div className="card-body">
                     <p><strong>Ubicación:</strong> {incident.ubicacion}</p>
                     <p><strong>Vialidad:</strong> {incident.tipoVialidad}</p>
+                    <p><strong>Estado:</strong> {incident.estado}</p>
                   </div>
                 </div>
               ))
