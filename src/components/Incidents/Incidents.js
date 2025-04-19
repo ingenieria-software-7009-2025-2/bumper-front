@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { AlertCircle, ArrowLeft } from 'lucide-react';
+import { fetchWithAuth } from '../../services/api';
 import './Incidents.css';
 
 const Incidents = () => {
@@ -15,100 +16,93 @@ const Incidents = () => {
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
-  // Cargar incidentes al montar el componente
+  // Función para formatear fecha y hora
+  const formatDateTime = (dateString) => {
+    return new Date(dateString).toLocaleString('es-MX', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  // Cargar todos los incidentes al montar el componente
   useEffect(() => {
-    const fetchIncidents = async () => {
-      const correo = localStorage.getItem('userCorreo');
-      if (!correo) {
-        setError('No estás autenticado. Por favor, inicia sesión.');
-        navigate('/');
-        return;
-      }
-  
+    const fetchAllIncidents = async () => {
       try {
-        const userResponse = await fetch('http://localhost:8080/v1/users/me', {
-          method: 'GET',
-          headers: { correo },
+        const response = await fetchWithAuth('http://localhost:8080/v1/incidentes/all', {
+          method: 'GET'
         });
-        if (!userResponse.ok) {
-          throw new Error('Error al obtener datos del usuario');
-        }
-        const userData = await userResponse.json();
-        const usuarioId = userData.id;
-  
-        const incidentsResponse = await fetch(`http://localhost:8080/v1/incidentes/usuario/${usuarioId}`, {
-          method: 'GET',
-        });
-        if (!incidentsResponse.ok) {
+
+        if (!response.ok) {
           throw new Error('Error al cargar los incidentes');
         }
-        const incidentsData = await incidentsResponse.json();
-        setIncidents(incidentsData);
+
+        const data = await response.json();
+        console.log("Respuesta de incidentes:", data); // Para debug
+
+        // Determinar la estructura correcta de los datos
+        let incidentesArray = [];
+        if (Array.isArray(data)) {
+          incidentesArray = data;
+        } else if (Array.isArray(data.incidentes)) {
+          incidentesArray = data.incidentes;
+        } else if (Array.isArray(data.data)) {
+          incidentesArray = data.data;
+        } else if (data.content && Array.isArray(data.content)) {
+          incidentesArray = data.content;
+        }
+
+        setIncidents(incidentesArray);
         setLoading(false);
       } catch (err) {
+        console.error('Error completo:', err);
         setError(err.message);
         setLoading(false);
       }
     };
-  
-    fetchIncidents();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Array vacío para ejecutarse solo al montar
+
+    fetchAllIncidents();
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
-  
-    const correo = localStorage.getItem('userCorreo');
-    if (!correo) {
-      setError('No estás autenticado. Por favor, inicia sesión.');
-      navigate('/');
-      return;
-    }
-  
+
     try {
-      const userResponse = await fetch('http://localhost:8080/v1/users/me', {
-        method: 'GET',
-        headers: { correo },
-      });
-      if (!userResponse.ok) {
-        throw new Error('Error al obtener datos del usuario');
+      const userId = localStorage.getItem('userId');
+      if (!userId) {
+        throw new Error('No estás autenticado');
       }
-      const userData = await userResponse.json();
-      const usuarioId = userData.id;
-  
+
       const newIncident = {
-        usuarioId: usuarioId,
+        usuarioId: parseInt(userId),
         tipoIncidente: formData.type.toUpperCase(),
         ubicacion: formData.location,
         tipoVialidad: formData.roadType.toUpperCase(),
       };
-  
-      const response = await fetch('http://localhost:8080/v1/incidentes', {
+
+      const response = await fetchWithAuth('http://localhost:8080/v1/incidentes', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify(newIncident),
       });
-  
+
       if (!response.ok) {
         throw new Error('Error al reportar el incidente');
       }
-  
-      // Recargar los incidentes desde el backend en lugar de actualizar localmente
-      const fetchIncidents = async () => {
-        const incidentsResponse = await fetch(`http://localhost:8080/v1/incidentes/usuario/${usuarioId}`, {
-          method: 'GET',
-        });
-        if (!incidentsResponse.ok) {
-          throw new Error('Error al recargar los incidentes');
-        }
-        const incidentsData = await incidentsResponse.json();
-        setIncidents(incidentsData);
-      };
-      await fetchIncidents();
-  
+
+      // Recargar todos los incidentes
+      const refreshResponse = await fetchWithAuth('http://localhost:8080/v1/incidentes/all', {
+        method: 'GET'
+      });
+
+      if (!refreshResponse.ok) {
+        throw new Error('Error al recargar los incidentes');
+      }
+
+      const refreshData = await refreshResponse.json();
+      setIncidents(Array.isArray(refreshData) ? refreshData : []);
       setFormData({ type: '', location: '', time: '', roadType: '' });
     } catch (err) {
       setError(err.message);
@@ -131,7 +125,7 @@ const Incidents = () => {
       <div className="incidents-container">
         <p className="error-message">{error}</p>
         <Link to="/home" className="back-button">
-          <ArrowLeft size={20} /> Volver al inicio de sesión
+          <ArrowLeft size={20} /> Volver al inicio
         </Link>
       </div>
     );
@@ -201,7 +195,7 @@ const Incidents = () => {
 
         {/* Listado de Incidentes */}
         <div className="incidents-list">
-          <h2>Incidentes Reportados</h2>
+          <h2>Todos los Incidentes</h2>
           <div className="list-container">
             {incidents.length === 0 ? (
               <p>No hay incidentes reportados aún.</p>
@@ -211,12 +205,14 @@ const Incidents = () => {
                   <div className="card-header">
                     <span className="incident-type">{incident.tipoIncidente}</span>
                     <span className="incident-time">
-                      {new Date(incident.horaIncidente).toLocaleTimeString()}
+                      {formatDateTime(incident.horaIncidente)}
                     </span>
                   </div>
                   <div className="card-body">
                     <p><strong>Ubicación:</strong> {incident.ubicacion}</p>
                     <p><strong>Vialidad:</strong> {incident.tipoVialidad}</p>
+                    <p><strong>Estado:</strong> {incident.estado}</p>
+                    <p><strong>Reportado por:</strong> {incident.usuario?.nombre} {incident.usuario?.apellido}</p>
                   </div>
                 </div>
               ))
