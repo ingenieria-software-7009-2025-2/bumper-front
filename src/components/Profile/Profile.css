@@ -185,3 +185,47 @@
   .estado-container select {
     transition: all 0.3s ease;
   }
+
+  .map-section {
+    margin-top: 2rem;
+    padding: 1rem;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+  
+  .map-container {
+    margin-top: 1rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  
+  .incident-popup {
+    padding: 10px;
+    max-width: 300px;
+  }
+  
+  .incident-popup h3 {
+    margin: 0 0 10px 0;
+    color: #2d3748;
+  }
+  
+  .incident-popup p {
+    margin: 5px 0;
+    font-size: 14px;
+  }
+  
+  .incident-photos {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin-top: 10px;
+  }
+  
+  /* contenedor principal tenga suficiente espacio */
+  .profile-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+  }

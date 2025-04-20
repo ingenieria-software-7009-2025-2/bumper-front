@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { AlertCircle, ArrowLeft } from "lucide-react";
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import { fetchWithAuth } from "../../services/api";
+import LocationPicker from './LocationPicker';
+import 'leaflet/dist/leaflet.css';
 import "./Incidents.css";
 
 const Incidents = () => {
@@ -28,6 +31,18 @@ const Incidents = () => {
       minute: "2-digit",
     });
   };
+
+  const [selectedLocation, setSelectedLocation] = useState(null);
+
+  const handleLocationSelect = (lat, lng) => {
+    setSelectedLocation([lat, lng]);
+    setFormData(prev => ({
+      ...prev,
+      latitude: lat.toString(),
+      longitude: lng.toString()
+    }));
+  };
+
 
   // Función para obtener la ubicación actual
   const getCurrentLocation = () => {
@@ -104,6 +119,11 @@ const Incidents = () => {
     e.preventDefault();
     setError("");
 
+    if (!selectedLocation && !formData.latitude && !formData.longitude) {
+      setError("Por favor selecciona una ubicación en el mapa o ingresa las coordenadas manualmente");
+      return;
+    }
+
     try {
       const userId = localStorage.getItem("userId");
       if (!userId) {
@@ -167,6 +187,7 @@ const Incidents = () => {
         latitude: "",
         longitude: "",
       });
+      
     } catch (err) {
       console.error("Error completo:", err);
       setError(err.message);
@@ -177,6 +198,7 @@ const Incidents = () => {
         navigate("/");
       }
     }
+    setSelectedLocation(null);
   };
 
   const handleChange = (e) => {
@@ -243,6 +265,19 @@ const Incidents = () => {
               required
             />
           </div>
+          
+          <div className="form-group">
+            <label>Selecciona la ubicación en el mapa</label>
+            <LocationPicker
+              position={selectedLocation}
+              onLocationSelect={handleLocationSelect}
+            />
+            {selectedLocation && (
+              <p className="coordinates-text">
+                Coordenadas seleccionadas: {selectedLocation[0].toFixed(6)}, {selectedLocation[1].toFixed(6)}
+              </p>
+            )}
+          </div>
 
           <div className="form-group">
             <label>Tipo de Vialidad</label>
@@ -298,6 +333,35 @@ const Incidents = () => {
         {/* Listado de Incidentes */}
         <div className="incidents-list">
           <h2>Todos los Incidentes</h2>
+
+          <div className="incidents-map-container">
+            <MapContainer
+              center={[19.4326, -99.1332]}
+              zoom={13}
+              style={{ height: '400px', width: '100%' }}
+            >
+              <TileLayer
+                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+              />
+              {incidents.map((incident) => (
+                <Marker
+                  key={incident.id}
+                  position={[incident.latitud, incident.longitud]}
+                >
+                  <Popup>
+                    <div className="incident-popup">
+                      <h3>{incident.tipoIncidente}</h3>
+                      <p><strong>Ubicación:</strong> {incident.ubicacion}</p>
+                      <p><strong>Estado:</strong> {incident.estado}</p>
+                      <p><strong>Reportado por:</strong> {incident.usuario?.nombre} {incident.usuario?.apellido}</p>
+                    </div>
+                  </Popup>
+                </Marker>
+              ))}
+            </MapContainer>
+          </div>
+
           <div className="list-container">
             {incidents.length === 0 ? (
               <p>No hay incidentes reportados aún.</p>
