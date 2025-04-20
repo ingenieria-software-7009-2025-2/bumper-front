@@ -9,7 +9,9 @@ const Incidents = () => {
     type: '',
     location: '',
     time: '',
-    roadType: ''
+    roadType: '',
+    latitude: '',
+    longitude: ''  
   });
   const [incidents, setIncidents] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -27,6 +29,27 @@ const Incidents = () => {
     });
   };
 
+  // Función para obtener la ubicación actual
+  const getCurrentLocation = () => {
+    if ("geolocation" in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setFormData(prev => ({
+            ...prev,
+            latitude: position.coords.latitude.toString(),
+            longitude: position.coords.longitude.toString()
+          }));
+        },
+        (error) => {
+          console.error("Error obteniendo ubicación:", error);
+          setError("No se pudo obtener la ubicación actual. Por favor, intente de nuevo.");
+        }
+      );
+    } else {
+      setError("Geolocalización no está disponible en este navegador.");
+    }
+  };
+
   // Cargar todos los incidentes al montar el componente
   useEffect(() => {
     const fetchAllIncidents = async () => {
@@ -40,9 +63,8 @@ const Incidents = () => {
         }
 
         const data = await response.json();
-        console.log("Respuesta de incidentes:", data); // Para debug
+        console.log("Respuesta de incidentes:", data);
 
-        // Determinar la estructura correcta de los datos
         let incidentesArray = [];
         if (Array.isArray(data)) {
           incidentesArray = data;
@@ -60,11 +82,15 @@ const Incidents = () => {
         console.error('Error completo:', err);
         setError(err.message);
         setLoading(false);
+        // Usar navigate para redireccionar en caso de error de autenticación
+        if (err.message.includes('autenticación') || err.message.includes('token')) {
+          navigate('/');
+        }
       }
     };
 
     fetchAllIncidents();
-  }, []);
+  }, [navigate]); // Agregar navigate como dependencia
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -73,26 +99,39 @@ const Incidents = () => {
     try {
       const userId = localStorage.getItem('userId');
       if (!userId) {
+        navigate('/');
         throw new Error('No estás autenticado');
       }
 
-      const newIncident = {
+      // Crear el objeto de solicitud según la estructura que espera el backend
+      const incidenteRequest = {
         usuarioId: parseInt(userId),
         tipoIncidente: formData.type.toUpperCase(),
         ubicacion: formData.location,
         tipoVialidad: formData.roadType.toUpperCase(),
+        latitud: parseFloat(formData.latitude) || 0,
+        longitud: parseFloat(formData.longitude) || 0
       };
 
-      const response = await fetchWithAuth('http://localhost:8080/v1/incidentes', {
+      // Hacer la petición al nuevo endpoint
+      const response = await fetchWithAuth('http://localhost:8080/v1/incidentes/create', {
         method: 'POST',
-        body: JSON.stringify(newIncident),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(incidenteRequest),
       });
 
+      const responseData = await response.json();
+
       if (!response.ok) {
-        throw new Error('Error al reportar el incidente');
+        throw new Error(responseData.mensaje || 'Error al reportar el incidente');
       }
 
-      // Recargar todos los incidentes
+      // Mostrar mensaje de éxito
+      alert('Incidente reportado exitosamente');
+
+      // Recargar la lista de incidentes
       const refreshResponse = await fetchWithAuth('http://localhost:8080/v1/incidentes/all', {
         method: 'GET'
       });
@@ -103,9 +142,22 @@ const Incidents = () => {
 
       const refreshData = await refreshResponse.json();
       setIncidents(Array.isArray(refreshData) ? refreshData : []);
-      setFormData({ type: '', location: '', time: '', roadType: '' });
+      
+      // Limpiar el formulario
+      setFormData({
+        type: '',
+        location: '',
+        roadType: '',
+        latitude: '',
+        longitude: ''
+      });
+
     } catch (err) {
+      console.error('Error completo:', err);
       setError(err.message);
+      if (err.message.includes('autenticación') || err.message.includes('token')) {
+        navigate('/');
+      }
     }
   };
 
@@ -144,33 +196,35 @@ const Incidents = () => {
       <div className="incidents-content">
         {/* Formulario */}
         <form onSubmit={handleSubmit} className="incident-form">
-          <div className="form-group">
-            <label>Tipo de Incidente</label>
-            <select
-              name="type"
-              value={formData.type}
-              onChange={handleChange}
-              required
-            >
-              <option value="">Seleccionar tipo</option>
-              <option value="BACHE">Bache</option>
-              <option value="SEMAFORO_DAÑADO">Semáforo dañado</option>
-              <option value="ILUMINACION">Iluminación</option>
-              <option value="ACCIDENTE">Accidente</option>
-            </select>
-          </div>
+      <div className="form-group">
+        <label>Tipo de Incidente</label>
+        <select
+          name="type"
+          value={formData.type}
+          onChange={handleChange}
+          required
+        >
+          <option value="">Seleccionar tipo</option>
+          <option value="BACHE">Bache</option>
+          <option value="SEMAFORO_DAÑADO">Semáforo dañado</option>
+          <option value="ILUMINACION">Iluminación</option>
+          <option value="ACCIDENTE">Accidente</option>
+        </select>
+      </div>
 
-          <div className="form-group">
-            <label>Ubicación</label>
-            <input
-              type="text"
-              name="location"
-              placeholder="Ej: Av. Principal #123"
-              value={formData.location}
-              onChange={handleChange}
-              required
-            />
-          </div>         
+      <div className="form-group">
+        <label>Ubicación</label>
+        <input
+          type="text"
+          name="location"
+          placeholder="Ej: Av. Principal #123"
+          value={formData.location}
+          onChange={handleChange}
+          required
+        />
+      </div>
+
+     
 
           <div className="form-group">
             <label>Tipo de Vialidad</label>
@@ -187,6 +241,36 @@ const Incidents = () => {
               <option value="PERIFERICO">Periférico</option>
             </select>
           </div>
+
+          <div className="form-group coordinates-group">
+        <button 
+          type="button" 
+          className="location-button"
+          onClick={getCurrentLocation}
+        >
+          Obtener Ubicación Actual
+        </button>
+        <div className="coordinates-inputs">
+          <input
+            type="number"
+            name="latitude"
+            placeholder="Latitud"
+            value={formData.latitude}
+            onChange={handleChange}
+            step="any"
+            required
+          />
+          <input
+            type="number"
+            name="longitude"
+            placeholder="Longitud"
+            value={formData.longitude}
+            onChange={handleChange}
+            step="any"
+            required
+          />
+        </div>
+      </div>
 
           <button type="submit" className="submit-button">
             Reportar Incidente
