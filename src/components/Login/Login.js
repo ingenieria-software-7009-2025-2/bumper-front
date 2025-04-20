@@ -1,47 +1,50 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { fetchWithAuth } from '../../services/api';
-import './Login.css';
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { fetchWithAuth } from "../../services/api";
+import "./Login.css";
 
 const AuthForm = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [formData, setFormData] = useState({
-    nombre: '',
-    apellido: '',
-    email: '',
-    password: '',
+    nombre: "",
+    apellido: "",
+    email: "",
+    password: "",
   });
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
   const navigate = useNavigate();
 
   const toggleForm = () => {
     setIsLogin(!isLogin);
-    setError('');
+    setError("");
   };
 
   const handleLogin = async (credentials) => {
     try {
-      const response = await fetchWithAuth('http://localhost:8080/v1/users/login', {
-        method: 'POST',
-        body: JSON.stringify(credentials),
-      });
+      const response = await fetchWithAuth(
+        "http://localhost:8080/v1/users/login",
+        {
+          method: "POST",
+          body: JSON.stringify(credentials),
+        }
+      );
 
       if (!response.ok) {
         if (response.status === 401) {
-          throw new Error('Credenciales inválidas');
+          throw new Error("Credenciales inválidas");
         }
-        throw new Error('Error en el inicio de sesión');
+        throw new Error("Error en el inicio de sesión");
       }
 
       const data = await response.json();
-      
+
       // Guardar datos importantes en localStorage
-      localStorage.setItem('token', data.token);
-      localStorage.setItem('userId', data.usuario.id);
-      localStorage.setItem('userNombre', data.usuario.nombre);
-      localStorage.setItem('userApellido', data.usuario.apellido);
-      localStorage.setItem('userCorreo', data.usuario.correo);
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("userId", data.usuario.id);
+      localStorage.setItem("userNombre", data.usuario.nombre);
+      localStorage.setItem("userApellido", data.usuario.apellido);
+      localStorage.setItem("userCorreo", data.usuario.correo);
 
       return data;
     } catch (error) {
@@ -51,7 +54,7 @@ const AuthForm = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
+    setError("");
 
     try {
       if (isLogin) {
@@ -62,29 +65,32 @@ const AuthForm = () => {
         };
 
         const loginData = await handleLogin(credentials);
-        console.log('Login exitoso:', loginData);
-        navigate('/home');
+        console.log("Login exitoso:", loginData);
+        navigate("/home");
       } else {
         // Registro
-        const registerResponse = await fetchWithAuth('http://localhost:8080/v1/users/create', {
-          method: 'POST',
-          body: JSON.stringify({
-            nombre: formData.nombre,
-            apellido: formData.apellido,
-            correo: formData.email,
-            password: formData.password,
-          }),
-        });
+        const registerResponse = await fetchWithAuth(
+          "http://localhost:8080/v1/users/create",
+          {
+            method: "POST",
+            body: JSON.stringify({
+              nombre: formData.nombre,
+              apellido: formData.apellido,
+              correo: formData.email,
+              password: formData.password,
+            }),
+          }
+        );
 
         if (!registerResponse.ok) {
           if (registerResponse.status === 409) {
-            throw new Error('El correo ya está registrado');
+            throw new Error("El correo ya está registrado");
           }
-          throw new Error('Error al registrar el usuario');
+          throw new Error("Error al registrar el usuario");
         }
 
         const registerData = await registerResponse.json();
-        console.log('Registro exitoso:', registerData);
+        console.log("Registro exitoso:", registerData);
 
         // Login automático después del registro
         const credentials = {
@@ -93,11 +99,11 @@ const AuthForm = () => {
         };
 
         await handleLogin(credentials);
-        navigate('/home');
+        navigate("/home");
       }
     } catch (err) {
       setError(err.message);
-      console.error('Error:', err);
+      console.error("Error:", err);
     }
   };
 
@@ -108,12 +114,10 @@ const AuthForm = () => {
     });
   };
 
- 
-
-   return (
+  return (
     <div className="auth-container">
-      <div className={`auth-box ${isLogin ? 'login' : 'register'}`}>
-        <h1>{isLogin ? 'Inicio de Sesión' : 'Registro'}</h1>
+      <div className={`auth-box ${isLogin ? "login" : "register"}`}>
+        <h1>{isLogin ? "Inicio de Sesión" : "Registro"}</h1>
 
         {error && <p className="error-message">{error}</p>}
 
@@ -165,22 +169,20 @@ const AuthForm = () => {
             />
           </div>
 
-          <button type="submit">
-            {isLogin ? 'Ingresar' : 'Registrarse'}
-          </button>
+          <button type="submit">{isLogin ? "Ingresar" : "Registrarse"}</button>
         </form>
 
         <div className="auth-toggle">
           {isLogin ? (
             <p>
-              ¿No tienes cuenta?{' '}
+              ¿No tienes cuenta?{" "}
               <button type="button" onClick={toggleForm}>
                 Regístrate aquí
               </button>
             </p>
           ) : (
             <p>
-              ¿Ya tienes cuenta?{' '}
+              ¿Ya tienes cuenta?{" "}
               <button type="button" onClick={toggleForm}>
                 Inicia sesión
               </button>

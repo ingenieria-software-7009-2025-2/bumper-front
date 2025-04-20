@@ -1,8 +1,8 @@
-import React from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
-import { Home, UserCircle, AlertCircle, Info, LogOut } from 'lucide-react';
-import { logout } from '../../services/auth'; // Importamos el servicio de logout
-import './Sidebar.css';
+import React from "react";
+import { NavLink, useNavigate } from "react-router-dom";
+import { Home, UserCircle, AlertCircle, Info, LogOut } from "lucide-react";
+import { logout } from "../../services/auth"; // Importamos el servicio de logout
+import "./Sidebar.css";
 
 const Sidebar = () => {
   const navigate = useNavigate();
@@ -10,11 +10,11 @@ const Sidebar = () => {
   const handleLogout = async () => {
     try {
       await logout(); // Usamos el servicio de logout que maneja todo internamente
-      navigate('/');
+      navigate("/");
     } catch (error) {
-      console.error('Error al cerrar sesión:', error);
+      console.error("Error al cerrar sesión:", error);
       // Aún si hay error, redirigimos al login
-      navigate('/');
+      navigate("/");
     }
   };
 
@@ -22,7 +22,7 @@ const Sidebar = () => {
     <div className="sidebar-container">
       <div className="sidebar-content">
         <h1 className="sidebar-title">Bumper APP</h1>
-        
+
         <nav className="sidebar-nav">
           <NavLink to="/home" className="nav-link">
             <Home className="nav-icon" />
