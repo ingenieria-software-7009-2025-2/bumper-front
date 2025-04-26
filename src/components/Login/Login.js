@@ -40,7 +40,7 @@ const AuthForm = () => {
       const data = await response.json();
 
       // Guardar datos importantes en localStorage
-      localStorage.setItem("token", data.token);
+      localStorage.setItem("token", data.usuario.token);localStorage.setItem("token", data.token);
       localStorage.setItem("userId", data.usuario.id);
       localStorage.setItem("userNombre", data.usuario.nombre);
       localStorage.setItem("userApellido", data.usuario.apellido);
