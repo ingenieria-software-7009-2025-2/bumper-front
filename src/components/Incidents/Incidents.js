@@ -67,7 +67,6 @@ const Incidents = () => {
     }
   };
 
-  // Cargar todos los incidentes al montar el componente
   useEffect(() => {
     const fetchAllIncidents = async () => {
       try {
@@ -79,6 +78,9 @@ const Incidents = () => {
         );
 
         if (!response.ok) {
+          if (response.status === 401 || response.status === 403) {
+            throw new Error("Error de autenticación");
+          }
           throw new Error("Error al cargar los incidentes");
         }
 
@@ -97,23 +99,38 @@ const Incidents = () => {
         }
 
         setIncidents(incidentesArray);
-        setLoading(false);
       } catch (err) {
-        console.error("Error completo:", err);
-        setError(err.message);
-        setLoading(false);
-        // Usar navigate para redireccionar en caso de error de autenticación
+        console.error("Error al cargar incidentes:", err);
+        
         if (
           err.message.includes("autenticación") ||
           err.message.includes("token")
         ) {
-          navigate("/");
+          localStorage.removeItem('userId');
+          navigate("/", { replace: true });
+          return;
         }
+        
+        setError(err.message);
+      } finally {
+        setLoading(false);
       }
     };
 
     fetchAllIncidents();
-  }, [navigate]); // Agregar navigate como dependencia
+  }, [navigate]);
+
+  if (loading) {
+    return <div className="incidents-container">Cargando incidentes...</div>;
+  }
+
+  if (error) {
+    return (
+      <div className="incidents-container">
+        <p className="error-message">{error}</p>
+      </div>
+    );
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -387,9 +404,11 @@ const Incidents = () => {
                       <strong>Estado:</strong> {incident.estado}
                     </p>
                     <p>
-                      <strong>Reportado por:</strong> {incident.usuario?.nombre}{" "}
-                      {incident.usuario?.apellido}
-                    </p>
+  <strong>Reportado por:</strong>{" "}
+  {incident.usuario
+    ? `${incident.usuario.nombre || ""} ${incident.usuario.apellido || ""}`
+    : "Desconocido"}
+</p>
                   </div>
                 </div>
               ))

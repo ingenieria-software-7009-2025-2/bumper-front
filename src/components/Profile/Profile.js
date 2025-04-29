@@ -9,7 +9,7 @@ const Profile = () => {
   const [user, setUser] = useState(null);
   const [incidents, setIncidents] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [error, setError] = useState(""); 
 
   // Función para formatear fecha y hora
   const formatDateTime = (dateString) => {
@@ -81,13 +81,13 @@ const Profile = () => {
 
   useEffect(() => {
     const fetchUserDataAndIncidents = async () => {
-      const userId = localStorage.getItem("userId");
-      if (!userId) {
-        setError("No estás autenticado. Por favor, inicia sesión.");
-        return;
-      }
-
       try {
+        const userId = localStorage.getItem("userId");
+        if (!userId) {
+          navigate("/", { replace: true });
+          return;
+        }
+
         // Obtener datos del usuario
         const userResponse = await fetchWithAuth(
           `http://localhost:8080/v1/users/${userId}`,
@@ -95,36 +95,54 @@ const Profile = () => {
             method: "GET",
           }
         );
+
+        if (!userResponse.ok) {
+          throw new Error("Error al obtener datos del usuario");
+        }
+
         const userJson = await userResponse.json();
         setUser(userJson.usuario);
 
-        // Obtener incidentes del usuario
+        // Obtener incidentes
         const incidentsResponse = await fetchWithAuth(
-          `http://localhost:8080/v1/incidentes/usuario/${userId}`,
-          { method: "GET" }
+          "http://localhost:8080/v1/incidentes/all",
+          {
+            method: "GET",
+          }
         );
-        const incidentsData = await incidentsResponse.json();
 
-        // DEBUG: Muestra la estructura real de la respuesta
-        console.log("Respuesta de incidentes:", incidentsData);
+        if (!incidentsResponse.ok) {
+          if (incidentsResponse.status === 401 || incidentsResponse.status === 403) {
+            throw new Error("Error de autenticación");
+          }
+          throw new Error("Error al cargar los incidentes");
+        }
 
-        // Extrae el array de incidentes según la estructura real
+        const data = await incidentsResponse.json();
+        console.log("Respuesta de incidentes:", data);
+        
+        // Extraer el array de incidentes según la estructura de la respuesta
         let incidentesArray = [];
-        if (Array.isArray(incidentsData)) {
-          incidentesArray = incidentsData;
-        } else if (Array.isArray(incidentsData.incidentes)) {
-          incidentesArray = incidentsData.incidentes;
-        } else if (Array.isArray(incidentsData.data)) {
-          incidentesArray = incidentsData.data;
-        } else if (
-          incidentsData.content &&
-          Array.isArray(incidentsData.content)
-        ) {
-          incidentesArray = incidentsData.content;
+        if (Array.isArray(data)) {
+          incidentesArray = data;
+        } else if (Array.isArray(data.incidentes)) {
+          incidentesArray = data.incidentes;
+        } else if (Array.isArray(data.data)) {
+          incidentesArray = data.data;
+        } else if (data.content && Array.isArray(data.content)) {
+          incidentesArray = data.content;
         }
 
         setIncidents(incidentesArray);
       } catch (err) {
+        console.error("Error:", err);
+        
+        if (err.message.includes("autenticación") || err.message.includes("token")) {
+          localStorage.removeItem('userId');
+          navigate("/", { replace: true });
+          return;
+        }
+        
         setError(err.message);
       } finally {
         setLoading(false);
@@ -132,7 +150,7 @@ const Profile = () => {
     };
 
     fetchUserDataAndIncidents();
-  }, []);
+  }, [navigate]);
 
   if (loading) {
     return (
