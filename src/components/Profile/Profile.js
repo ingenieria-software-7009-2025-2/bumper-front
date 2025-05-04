@@ -9,7 +9,10 @@ const Profile = () => {
   const [user, setUser] = useState(null);
   const [incidents, setIncidents] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(""); 
+  const [error, setError] = useState("");
+  const [editField, setEditField] = useState(null); // 'nombre', 'apellido', 'password'
+  const [editValue, setEditValue] = useState("");
+  const [saving, setSaving] = useState(false);
 
   // Función para formatear fecha y hora
   const formatDateTime = (dateString) => {
@@ -112,7 +115,10 @@ const Profile = () => {
         );
 
         if (!incidentsResponse.ok) {
-          if (incidentsResponse.status === 401 || incidentsResponse.status === 403) {
+          if (
+            incidentsResponse.status === 401 ||
+            incidentsResponse.status === 403
+          ) {
             throw new Error("Error de autenticación");
           }
           throw new Error("Error al cargar los incidentes");
@@ -120,7 +126,7 @@ const Profile = () => {
 
         const data = await incidentsResponse.json();
         console.log("Respuesta de incidentes:", data);
-        
+
         // Extraer el array de incidentes según la estructura de la respuesta
         let incidentesArray = [];
         if (Array.isArray(data)) {
@@ -136,13 +142,16 @@ const Profile = () => {
         setIncidents(incidentesArray);
       } catch (err) {
         console.error("Error:", err);
-        
-        if (err.message.includes("autenticación") || err.message.includes("token")) {
-          localStorage.removeItem('userId');
+
+        if (
+          err.message.includes("autenticación") ||
+          err.message.includes("token")
+        ) {
+          localStorage.removeItem("userId");
           navigate("/", { replace: true });
           return;
         }
-        
+
         setError(err.message);
       } finally {
         setLoading(false);
@@ -169,6 +178,43 @@ const Profile = () => {
     );
   }
 
+  const handleSaveField = async (field) => {
+    setSaving(true);
+    try {
+      const userId = user.id;
+      const payload = {
+        id: userId,
+        nombre: field === "nombre" ? editValue : user.nombre,
+        apellido: field === "apellido" ? editValue : user.apellido,
+        password: field === "password" ? editValue : user.password,
+      };
+
+      const response = await fetchWithAuth(
+        "http://localhost:8080/v1/users/update-datos-basicos",
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        }
+      );
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.mensaje || "Error al actualizar");
+
+      // Actualizar el estado local del usuario
+      setUser((prev) => ({
+        ...prev,
+        [field]: editValue,
+      }));
+      alert("Dato actualizado correctamente");
+      setEditField(null);
+      setEditValue("");
+    } catch (err) {
+      alert(err.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
     <div className="profile-container">
       <div className="header-section">
@@ -187,30 +233,151 @@ const Profile = () => {
       <div className="profile-content">
         {/* Formulario de Perfil */}
         <div className="profile-form-section">
-          <form className="profile-form">
+          <form className="profile-form" onSubmit={(e) => e.preventDefault()}>
+            {/* Nombre */}
             <div className="form-group">
               <label>Nombre</label>
-              <input type="text" value={user?.nombre || ""} readOnly />
+              <input
+                type="text"
+                value={editField === "nombre" ? editValue : user?.nombre || ""}
+                readOnly={editField !== "nombre"}
+                onChange={(e) => setEditValue(e.target.value)}
+              />
+              {editField === "nombre" ? (
+                <>
+                  <button
+                    type="button"
+                    className="save-button"
+                    disabled={saving || editValue === user.nombre}
+                    onClick={() => handleSaveField("nombre")}
+                  >
+                    Guardar
+                  </button>
+                  <button
+                    type="button"
+                    className="cancel-button"
+                    disabled={saving}
+                    onClick={() => {
+                      setEditField(null);
+                      setEditValue("");
+                    }}
+                  >
+                    Cancelar
+                  </button>
+                </>
+              ) : (
+                <button
+                  type="button"
+                  className="edit-button"
+                  onClick={() => {
+                    setEditField("nombre");
+                    setEditValue(user.nombre);
+                  }}
+                >
+                  Modificar
+                </button>
+              )}
             </div>
 
+            {/* Apellido */}
             <div className="form-group">
               <label>Apellido</label>
-              <input type="text" value={user?.apellido || ""} readOnly />
+              <input
+                type="text"
+                value={
+                  editField === "apellido" ? editValue : user?.apellido || ""
+                }
+                readOnly={editField !== "apellido"}
+                onChange={(e) => setEditValue(e.target.value)}
+              />
+              {editField === "apellido" ? (
+                <>
+                  <button
+                    type="button"
+                    className="save-button"
+                    disabled={saving || editValue === user.apellido}
+                    onClick={() => handleSaveField("apellido")}
+                  >
+                    Guardar
+                  </button>
+                  <button
+                    type="button"
+                    className="cancel-button"
+                    disabled={saving}
+                    onClick={() => {
+                      setEditField(null);
+                      setEditValue("");
+                    }}
+                  >
+                    Cancelar
+                  </button>
+                </>
+              ) : (
+                <button
+                  type="button"
+                  className="edit-button"
+                  onClick={() => {
+                    setEditField("apellido");
+                    setEditValue(user.apellido);
+                  }}
+                >
+                  Modificar
+                </button>
+              )}
             </div>
 
+            {/* Correo electrónico (no editable) */}
             <div className="form-group">
               <label>Correo electrónico</label>
               <input type="email" value={user?.correo || ""} readOnly />
             </div>
+           
 
+            {/* Contraseña */}
             <div className="form-group">
               <label>Contraseña</label>
-              <input type="password" value="********" readOnly />
+              <input
+                type={editField === "password" ? "text" : "password"}
+                value={editField === "password" ? editValue : "****"}
+                readOnly={editField !== "password"}
+                onChange={(e) => setEditValue(e.target.value)}
+                autoComplete="new-password"
+              />
+              {editField === "password" ? (
+                <>
+                  <button
+                    type="button"
+                    className="save-button"
+                    disabled={saving || !editValue}
+                    onClick={() => handleSaveField("password")}
+                  >
+                    Guardar
+                  </button>
+                  <button
+                    type="button"
+                    className="cancel-button"
+                    disabled={saving}
+                    onClick={() => {
+                      setEditField(null);
+                      setEditValue("");
+                    }}
+                  >
+                    Cancelar
+                  </button>
+                </>
+              ) : (
+                <button
+                  type="button"
+                  className="edit-button"
+                  onClick={() => {
+                    setEditField("password");
+                    setEditValue("");
+                  }}
+                >
+                  Modificar
+                </button>
+              )}
             </div>
-
-            <button type="button" className="save-button" disabled>
-              Guardar Cambios
-            </button>
           </form>
         </div>
 
