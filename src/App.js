@@ -1,18 +1,18 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Incidents from './components/Incidents/Incidents';
 import Profile from './components/Profile/Profile';
 import AuthForm from './components/Login/Login';
 import Home from './components/Home/Home';
-import Sidebar from './components/Layout/Sidebar';
 import About from './components/About/About';
+import PrivateRoute from './components/PrivateRoute/PrivateRoute';
 import './App.css';
 
 function App() {
   return (
     <Router>
       <Routes>
-        {/* Ruta raíz para el Login sin Sidebar */}
+        {/* Ruta pública para el Login */}
         <Route 
           path="/" 
           element={
@@ -21,21 +21,51 @@ function App() {
             </div>
           } 
         />
-        {/* Ruta para el Home con Sidebar */}
+
+        {/* Rutas protegidas */}
         <Route 
           path="/home" 
           element={
-            <div className="app-container">
-              <Sidebar />
-              <main className="main-content">
-                <Home />
-              </main>
-            </div>
+            <PrivateRoute>
+              <Home />
+            </PrivateRoute>
           } 
         />
-        <Route path="/incidents" element={<Incidents />} />
-        <Route path="/profile" element={<Profile />} />
-        <Route path="/about" element={<About />} />
+
+        <Route 
+          path="/incidents" 
+          element={
+            <PrivateRoute>
+              <Incidents />
+            </PrivateRoute>
+          } 
+        />
+
+        <Route 
+          path="/profile" 
+          element={
+            <PrivateRoute>
+              <Profile />
+            </PrivateRoute>
+          } 
+        />
+
+        <Route 
+          path="/about" 
+          element={
+            <PrivateRoute>
+              <About />
+            </PrivateRoute>
+          } 
+        />
+
+        {/* Ruta para manejar URLs no encontradas */}
+        <Route 
+          path="*" 
+          element={
+            <Navigate to="/" replace />
+          } 
+        />
       </Routes>
     </Router>
   );
