@@ -264,10 +264,10 @@ const Incidents = () => {
               required
             >
               <option value="">Seleccionar tipo</option>
-              <option value="BACHE">Bache</option>
-              <option value="SEMAFORO_DAÑADO">Semáforo dañado</option>
               <option value="ILUMINACION">Iluminación</option>
-              <option value="ACCIDENTE">Accidente</option>
+              <option value="BACHES">Baches</option>
+              <option value="BASURA">Basura</option>
+              <option value="OTRO">Otro</option>
             </select>
           </div>
 
