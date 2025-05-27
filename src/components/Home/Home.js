@@ -3,8 +3,45 @@ import { MapPin, AlertTriangle, Clock, CheckCircle } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { fetchWithAuth } from '../../services/api';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import './Home.css';
+
+// Función para crear un icono personalizado con SVG inline
+const createSvgIcon = (color, iconType) => {
+  // Definir el SVG según el tipo de incidente
+  let svgPath;
+  
+  switch (iconType) {
+    case 'ILUMINACION':
+      svgPath = 'M12 7a5 5 0 1 0 0 10 5 5 0 0 0 0-10zm0 16a1 1 0 0 1-1-1v-2a1 1 0 0 1 2 0v2a1 1 0 0 1-1 1zm-8-9a1 1 0 0 1-1-1 1 1 0 0 1 1-1h2a1 1 0 0 1 0 2H4zm16-1a1 1 0 0 1 0-2h2a1 1 0 0 1 0 2h-2zM6.34 17.66a1 1 0 0 1-1.41-1.41l1.41-1.41a1 1 0 0 1 1.41 1.41l-1.41 1.41zm12.73-12.73a1 1 0 0 1-1.41 0L16.24 3.51a1 1 0 0 1 1.41-1.41l1.42 1.42a1 1 0 0 1 0 1.41zm-14.14 0a1 1 0 0 1 0-1.41L6.34 2.1a1 1 0 0 1 1.41 1.41L6.34 4.93a1 1 0 0 1-1.41 0zM12 2a1 1 0 0 1 1 1v2a1 1 0 0 1-2 0V3a1 1 0 0 1 1-1zm5.66 15.66l1.41 1.41a1 1 0 0 1-1.41 1.41l-1.41-1.41a1 1 0 0 1 1.41-1.41z'; // Lightbulb
+      break;
+    case 'BACHES':
+      svgPath = 'M21.73 18l-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3zM12 8.5a.5.5 0 0 1 .5.5v5a.5.5 0 0 1-1 0V9a.5.5 0 0 1 .5-.5zm.5 8.5a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0z'; // AlertTriangle
+      break;
+    case 'BASURA':
+      svgPath = 'M3 6h18m-2 0v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6m3 0V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2m-6 5v6m4-6v6'; // Trash
+      break;
+    default:
+      svgPath = 'M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10zm0-14v4m0 4h.01'; // HelpCircle
+  }
+
+  // Crear el HTML del SVG
+  const svgHtml = `
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="${svgPath}"></path>
+    </svg>
+  `;
+
+  // Crear un div icon con el SVG
+  return L.divIcon({
+    html: `<div class="custom-marker" style="background-color: white; border-radius: 50%; padding: 5px; border: 2px solid ${color};">${svgHtml}</div>`,
+    className: '',
+    iconSize: [36, 36],
+    iconAnchor: [18, 18],
+    popupAnchor: [0, -18]
+  });
+};
 
 const Home = () => {
   const [incidentes, setIncidentes] = useState([]);
@@ -80,6 +117,26 @@ const Home = () => {
       hour: "2-digit",
       minute: "2-digit",
     });
+  };
+
+  // Función para obtener el color según el estado
+  const getColorByState = (estado) => {
+    switch (estado) {
+      case 'PENDIENTE':
+        return '#ff6b6b'; // Rojo
+      case 'EN_PROCESO':
+        return '#feca57'; // Amarillo
+      case 'RESUELTO':
+        return '#1dd1a1'; // Verde
+      default:
+        return '#4a90e2'; // Azul por defecto
+    }
+  };
+
+  // Función para obtener el icono según el tipo y estado
+  const getIncidentIcon = (incident) => {
+    const color = getColorByState(incident.estado);
+    return createSvgIcon(color, incident.tipoIncidente);
   };
 
   if (loading) {
@@ -158,6 +215,7 @@ const Home = () => {
               <Marker
                 key={incident.id}
                 position={[incident.latitud, incident.longitud]}
+                icon={getIncidentIcon(incident)}
               >
                 <Popup>
                   <div className="incident-popup">
@@ -176,6 +234,23 @@ const Home = () => {
               </Marker>
             ))}
           </MapContainer>
+        </div>
+        <div className="map-legend">
+          <h4>Leyenda</h4>
+          <div className="legend-items">
+            <div className="legend-item">
+              <div className="legend-color" style={{backgroundColor: '#ff6b6b'}}></div>
+              <span>Pendiente</span>
+            </div>
+            <div className="legend-item">
+              <div className="legend-color" style={{backgroundColor: '#feca57'}}></div>
+              <span>En Proceso</span>
+            </div>
+            <div className="legend-item">
+              <div className="legend-color" style={{backgroundColor: '#1dd1a1'}}></div>
+              <span>Resuelto</span>
+            </div>
+          </div>
         </div>
       </div>
 

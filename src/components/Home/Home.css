@@ -181,3 +181,53 @@
 .report-button:hover {
   background: #f0f4f8;
 }
+
+.custom-marker-pendiente {
+  border-radius: 50%;
+  border: 2px solid white;
+}
+
+.custom-marker-en-proceso {
+  border-radius: 50%;
+  border: 2px solid white;
+}
+
+.custom-marker-resuelto {
+  border-radius: 50%;
+  border: 2px solid white;
+}
+
+/* Leyenda del mapa */
+.map-legend {
+  margin-top: 10px;
+  padding: 10px;
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.map-legend h4 {
+  margin-top: 0;
+  margin-bottom: 8px;
+  font-size: 14px;
+}
+
+.legend-items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  font-size: 12px;
+}
+
+.legend-color {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  margin-right: 5px;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+}
