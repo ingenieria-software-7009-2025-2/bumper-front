@@ -101,7 +101,7 @@ const Incidents = () => {
         setIncidents(incidentesArray);
       } catch (err) {
         console.error("Error al cargar incidentes:", err);
-        
+
         if (
           err.message.includes("autenticación") ||
           err.message.includes("token")
@@ -110,7 +110,7 @@ const Incidents = () => {
           navigate("/", { replace: true });
           return;
         }
-        
+
         setError(err.message);
       } finally {
         setLoading(false);
@@ -194,7 +194,17 @@ const Incidents = () => {
       }
 
       const refreshData = await refreshResponse.json();
-      setIncidents(Array.isArray(refreshData) ? refreshData : []);
+      let incidentesArray = [];
+      if (Array.isArray(refreshData)) {
+        incidentesArray = refreshData;
+      } else if (Array.isArray(refreshData.incidentes)) {
+        incidentesArray = refreshData.incidentes;
+      } else if (Array.isArray(refreshData.data)) {
+        incidentesArray = refreshData.data;
+      } else if (refreshData.content && Array.isArray(refreshData.content)) {
+        incidentesArray = refreshData.content;
+      }
+      setIncidents(incidentesArray);
 
       // Limpiar el formulario
       setFormData({
@@ -204,7 +214,7 @@ const Incidents = () => {
         latitude: "",
         longitude: "",
       });
-      
+
     } catch (err) {
       console.error("Error completo:", err);
       setError(err.message);
@@ -282,7 +292,7 @@ const Incidents = () => {
               required
             />
           </div>
-          
+
           <div className="form-group">
             <label>Selecciona la ubicación en el mapa</label>
             <LocationPicker
@@ -307,8 +317,8 @@ const Incidents = () => {
               <option value="">Seleccionar vialidad</option>
               <option value="AVENIDA">Avenida</option>
               <option value="CALLE">Calle</option>
-              <option value="CARRETERA">Carretera</option>
-              <option value="PERIFERICO">Periférico</option>
+              <option value="CERRADA">Cerrada</option>
+              <option value="OTRO">Otro</option>
             </select>
           </div>
 
@@ -404,11 +414,11 @@ const Incidents = () => {
                       <strong>Estado:</strong> {incident.estado}
                     </p>
                     <p>
-  <strong>Reportado por:</strong>{" "}
-  {incident.usuario
-    ? `${incident.usuario.nombre || ""} ${incident.usuario.apellido || ""}`
-    : "Desconocido"}
-</p>
+                      <strong>Reportado por:</strong>{" "}
+                      {incident.usuario
+                        ? `${incident.usuario.nombre || ""} ${incident.usuario.apellido || ""}`
+                        : "Desconocido"}
+                    </p>
                   </div>
                 </div>
               ))
