@@ -381,7 +381,12 @@ const Incidents = () => {
                       <h3>{incident.tipoIncidente}</h3>
                       <p><strong>Ubicación:</strong> {incident.ubicacion}</p>
                       <p><strong>Estado:</strong> {incident.estado}</p>
-                      <p><strong>Reportado por:</strong> {incident.usuario?.nombre} {incident.usuario?.apellido}</p>
+                      <p>
+                        <strong>Reportado por:</strong>{" "}
+                        {incident.usuario
+                          ? `${incident.usuario.nombre || ""} ${incident.usuario.apellido || ""}`
+                          : "Desconocido"}
+                      </p>
                     </div>
                   </Popup>
                 </Marker>

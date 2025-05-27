@@ -105,11 +105,11 @@ const Profile = () => {
 
         // Obtener incidentes
         const incidentsResponse = await fetchWithAuth(
-          "http://localhost:8080/v1/incidentes/all",
-          {
-            method: "GET",
-          }
-        );
+  `http://localhost:8080/v1/incidentes/usuario/${userId}`,
+  {
+    method: "GET",
+  }
+);
 
         if (!incidentsResponse.ok) {
           if (incidentsResponse.status === 401 || incidentsResponse.status === 403) {
