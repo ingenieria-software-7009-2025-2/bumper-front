@@ -9,7 +9,7 @@ const Profile = () => {
   const [user, setUser] = useState(null);
   const [incidents, setIncidents] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(""); 
+  const [error, setError] = useState("");
 
   // Función para formatear fecha y hora
   const formatDateTime = (dateString) => {
@@ -53,17 +53,24 @@ const Profile = () => {
       // Actualizar la lista de incidentes
       const refreshResponse = await fetchWithAuth(
         "http://localhost:8080/v1/incidentes/all",
-        {
-          method: "GET",
-        }
+        { method: "GET" }
       );
 
       if (!refreshResponse.ok) {
         throw new Error("Error al recargar los incidentes");
       }
-
       const refreshData = await refreshResponse.json();
-      setIncidents(Array.isArray(refreshData) ? refreshData : []);
+      let incidentesArray = [];
+      if (Array.isArray(refreshData)) {
+        incidentesArray = refreshData;
+      } else if (Array.isArray(refreshData.incidentes)) {
+        incidentesArray = refreshData.incidentes;
+      } else if (Array.isArray(refreshData.data)) {
+        incidentesArray = refreshData.data;
+      } else if (refreshData.content && Array.isArray(refreshData.content)) {
+        incidentesArray = refreshData.content;
+      }
+      setIncidents(incidentesArray);
 
       // Mostrar mensaje de éxito
       alert("Estado actualizado correctamente");
@@ -105,11 +112,11 @@ const Profile = () => {
 
         // Obtener incidentes
         const incidentsResponse = await fetchWithAuth(
-  `http://localhost:8080/v1/incidentes/usuario/${userId}`,
-  {
-    method: "GET",
-  }
-);
+          `http://localhost:8080/v1/incidentes/usuario/${userId}`,
+          {
+            method: "GET",
+          }
+        );
 
         if (!incidentsResponse.ok) {
           if (incidentsResponse.status === 401 || incidentsResponse.status === 403) {
@@ -120,7 +127,7 @@ const Profile = () => {
 
         const data = await incidentsResponse.json();
         console.log("Respuesta de incidentes:", data);
-        
+
         // Extraer el array de incidentes según la estructura de la respuesta
         let incidentesArray = [];
         if (Array.isArray(data)) {
@@ -136,13 +143,13 @@ const Profile = () => {
         setIncidents(incidentesArray);
       } catch (err) {
         console.error("Error:", err);
-        
+
         if (err.message.includes("autenticación") || err.message.includes("token")) {
           localStorage.removeItem('userId');
           navigate("/", { replace: true });
           return;
         }
-        
+
         setError(err.message);
       } finally {
         setLoading(false);
