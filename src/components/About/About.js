@@ -91,11 +91,12 @@ const About = () => {
           <Users /> Comunidad en Acción
         </h2>
         <div className="gallery-grid">
-          <div className="gallery-item placeholder-1">Imagen 1</div>
-          <div className="gallery-item placeholder-2">Imagen 2</div>
-          <div className="gallery-item placeholder-3">Imagen 3</div>
+          <img src="https://cdn.glitch.global/1e606ae4-8295-4215-9b27-e8171201367a/a-photograph-of-two-city-workers-collabo_5f1g1bwmSjeVQcsmDQN9eQ_Sf3rZarMTraHLfe3vqtKfw.jpeg?v=1748396735257" alt="Galería 1" className="gallery-item" />
+          <img src="https://cdn.glitch.global/1e606ae4-8295-4215-9b27-e8171201367a/a-photograph-depicting-a-focused-scene-o_ISR3PcOJT_OeAy1mltwN7g_Sf3rZarMTraHLfe3vqtKfw.jpeg?v=1748396738029" alt="Galería 2" className="gallery-item" />
+          <img src="https://cdn.glitch.global/1e606ae4-8295-4215-9b27-e8171201367a/a-photograph-of-two-city-workers-diligen_PSQD2jQdT-WQ4veIs_AtUQ_JNrjqw5vRAOESJGTpIb_2Q.jpeg?v=1748396745814" alt="Galería 3" className="gallery-item" />
         </div>
       </div>
+
 
       {/* Equipo */}
       <div className="team-section">
@@ -104,9 +105,19 @@ const About = () => {
         </h2>
         <div className="team-grid">
           <div className="team-card">
-            <div className="team-photo"></div>
-            <h3>Equipo Bumper</h3>
-            <p>Profesionales comprometidos con la innovación urbana</p>
+            <img src="https://cdn.glitch.global/1e606ae4-8295-4215-9b27-e8171201367a/20250527_1940_image.png?v=1748396503830" alt="Equipo 1" className="team-photo" />
+            <h3>Carlos</h3>
+            <p> Desarrollador </p>
+          </div>
+          <div className="team-card">
+            <img src="https://cdn.glitch.global/1e606ae4-8295-4215-9b27-e8171201367a/20250527_1937_image.png?v=1748396522671" alt="Equipo 2" className="team-photo" />
+            <h3>Sophia</h3>
+            <p> Desarrolladora </p>
+          </div>
+          <div className="team-card">
+            <img src="https://cdn.glitch.global/1e606ae4-8295-4215-9b27-e8171201367a/20250527_1936_image.png?v=1748396733326" alt="Equipo 3" className="team-photo" />
+            <h3>Raúl</h3>
+            <p>Desarrollador</p>
           </div>
         </div>
       </div>

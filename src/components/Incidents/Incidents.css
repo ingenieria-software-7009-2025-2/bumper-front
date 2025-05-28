@@ -234,3 +234,24 @@
   background-color: #d4edda;
   color: #155724;
 }
+
+.custom-marker {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+}
+
+.custom-marker svg {
+  display: block;
+}
+
+.incident-popup h3 {
+  margin-top: 0;
+  color: #333;
+}
+
+.incident-popup p {
+  margin: 5px 0;
+  font-size: 0.9rem;
+}

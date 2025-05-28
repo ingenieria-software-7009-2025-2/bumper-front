@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, UserCircle, AlertCircle } from "lucide-react";
+import { ArrowLeft, UserCircle, AlertCircle, Trash2 } from "lucide-react";
 import { fetchWithAuth } from "../../services/api";
 import "./Profile.css";
 
@@ -10,9 +10,6 @@ const Profile = () => {
   const [incidents, setIncidents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [editField, setEditField] = useState(null); // 'nombre', 'apellido', 'password'
-  const [editValue, setEditValue] = useState("");
-  const [saving, setSaving] = useState(false);
 
   // Función para formatear fecha y hora
   const formatDateTime = (dateString) => {
@@ -54,19 +51,7 @@ const Profile = () => {
       }
 
       // Actualizar la lista de incidentes
-      const refreshResponse = await fetchWithAuth(
-        "http://localhost:8080/v1/incidentes/all",
-        {
-          method: "GET",
-        }
-      );
-
-      if (!refreshResponse.ok) {
-        throw new Error("Error al recargar los incidentes");
-      }
-
-      const refreshData = await refreshResponse.json();
-      setIncidents(Array.isArray(refreshData) ? refreshData : []);
+      await fetchIncidents();
 
       // Mostrar mensaje de éxito
       alert("Estado actualizado correctamente");
@@ -81,6 +66,93 @@ const Profile = () => {
       }
     }
   };
+
+  // Función para eliminar incidente
+  const handleDeleteIncident = async (incidenteId) => {
+    try {
+      // Confirmar antes de eliminar
+      const confirmDelete = window.confirm("¿Estás seguro de que deseas eliminar este incidente? Esta acción no se puede deshacer.");
+      if (!confirmDelete) return;
+
+      const userId = localStorage.getItem("userId");
+      if (!userId) {
+        navigate("/");
+        throw new Error("No estás autenticado");
+      }
+
+      const response = await fetchWithAuth(
+        `http://localhost:8080/v1/incidentes/${incidenteId}?usuarioId=${userId}`,
+        {
+          method: "DELETE",
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.mensaje || "Error al eliminar el incidente");
+      }
+
+      // Actualizar la lista de incidentes
+      await fetchIncidents();
+
+      // Mostrar mensaje de éxito
+      alert("Incidente eliminado correctamente");
+    } catch (err) {
+      console.error("Error:", err);
+      alert(err.message);
+      if (
+        err.message.includes("autenticación") ||
+        err.message.includes("token")
+      ) {
+        navigate("/");
+      }
+    }
+  };
+
+  // Función para obtener incidentes
+  const fetchIncidents = useCallback(async () => {
+    try {
+      const userId = localStorage.getItem("userId");
+      if (!userId) {
+        navigate("/", { replace: true });
+        return;
+      }
+
+      const incidentsResponse = await fetchWithAuth(
+        `http://localhost:8080/v1/incidentes/usuario/${userId}`,
+        {
+          method: "GET",
+        }
+      );
+
+      if (!incidentsResponse.ok) {
+        if (incidentsResponse.status === 401 || incidentsResponse.status === 403) {
+          throw new Error("Error de autenticación");
+        }
+        throw new Error("Error al cargar los incidentes");
+      }
+
+      const data = await incidentsResponse.json();
+      console.log("Respuesta de incidentes:", data);
+
+      // Extraer el array de incidentes según la estructura de la respuesta
+      let incidentesArray = [];
+      if (Array.isArray(data)) {
+        incidentesArray = data;
+      } else if (Array.isArray(data.incidentes)) {
+        incidentesArray = data.incidentes;
+      } else if (Array.isArray(data.data)) {
+        incidentesArray = data.data;
+      } else if (data.content && Array.isArray(data.content)) {
+        incidentesArray = data.content;
+      }
+
+      setIncidents(incidentesArray);
+    } catch (err) {
+      console.error("Error:", err);
+      throw err;
+    }
+  }, [navigate, setIncidents]); // Dependencias de fetchIncidents
 
   useEffect(() => {
     const fetchUserDataAndIncidents = async () => {
@@ -107,47 +179,12 @@ const Profile = () => {
         setUser(userJson.usuario);
 
         // Obtener incidentes
-        const incidentsResponse = await fetchWithAuth(
-          "http://localhost:8080/v1/incidentes/all",
-          {
-            method: "GET",
-          }
-        );
-
-        if (!incidentsResponse.ok) {
-          if (
-            incidentsResponse.status === 401 ||
-            incidentsResponse.status === 403
-          ) {
-            throw new Error("Error de autenticación");
-          }
-          throw new Error("Error al cargar los incidentes");
-        }
-
-        const data = await incidentsResponse.json();
-        console.log("Respuesta de incidentes:", data);
-
-        // Extraer el array de incidentes según la estructura de la respuesta
-        let incidentesArray = [];
-        if (Array.isArray(data)) {
-          incidentesArray = data;
-        } else if (Array.isArray(data.incidentes)) {
-          incidentesArray = data.incidentes;
-        } else if (Array.isArray(data.data)) {
-          incidentesArray = data.data;
-        } else if (data.content && Array.isArray(data.content)) {
-          incidentesArray = data.content;
-        }
-
-        setIncidents(incidentesArray);
+        await fetchIncidents();
       } catch (err) {
         console.error("Error:", err);
 
-        if (
-          err.message.includes("autenticación") ||
-          err.message.includes("token")
-        ) {
-          localStorage.removeItem("userId");
+        if (err.message.includes("autenticación") || err.message.includes("token")) {
+          localStorage.removeItem('userId');
           navigate("/", { replace: true });
           return;
         }
@@ -159,7 +196,7 @@ const Profile = () => {
     };
 
     fetchUserDataAndIncidents();
-  }, [navigate]);
+  }, [navigate, fetchIncidents]);
 
   if (loading) {
     return (
@@ -177,43 +214,6 @@ const Profile = () => {
       </div>
     );
   }
-
-  const handleSaveField = async (field) => {
-    setSaving(true);
-    try {
-      const userId = user.id;
-      const payload = {
-        id: userId,
-        nombre: field === "nombre" ? editValue : user.nombre,
-        apellido: field === "apellido" ? editValue : user.apellido,
-        password: field === "password" ? editValue : user.password,
-      };
-
-      const response = await fetchWithAuth(
-        "http://localhost:8080/v1/users/update-datos-basicos",
-        {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        }
-      );
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.mensaje || "Error al actualizar");
-
-      // Actualizar el estado local del usuario
-      setUser((prev) => ({
-        ...prev,
-        [field]: editValue,
-      }));
-      alert("Dato actualizado correctamente");
-      setEditField(null);
-      setEditValue("");
-    } catch (err) {
-      alert(err.message);
-    } finally {
-      setSaving(false);
-    }
-  };
 
   return (
     <div className="profile-container">
@@ -233,151 +233,30 @@ const Profile = () => {
       <div className="profile-content">
         {/* Formulario de Perfil */}
         <div className="profile-form-section">
-          <form className="profile-form" onSubmit={(e) => e.preventDefault()}>
-            {/* Nombre */}
+          <form className="profile-form">
             <div className="form-group">
               <label>Nombre</label>
-              <input
-                type="text"
-                value={editField === "nombre" ? editValue : user?.nombre || ""}
-                readOnly={editField !== "nombre"}
-                onChange={(e) => setEditValue(e.target.value)}
-              />
-              {editField === "nombre" ? (
-                <>
-                  <button
-                    type="button"
-                    className="save-button"
-                    disabled={saving || editValue === user.nombre}
-                    onClick={() => handleSaveField("nombre")}
-                  >
-                    Guardar
-                  </button>
-                  <button
-                    type="button"
-                    className="cancel-button"
-                    disabled={saving}
-                    onClick={() => {
-                      setEditField(null);
-                      setEditValue("");
-                    }}
-                  >
-                    Cancelar
-                  </button>
-                </>
-              ) : (
-                <button
-                  type="button"
-                  className="edit-button"
-                  onClick={() => {
-                    setEditField("nombre");
-                    setEditValue(user.nombre);
-                  }}
-                >
-                  Modificar
-                </button>
-              )}
+              <input type="text" value={user?.nombre || ""} readOnly />
             </div>
 
-            {/* Apellido */}
             <div className="form-group">
               <label>Apellido</label>
-              <input
-                type="text"
-                value={
-                  editField === "apellido" ? editValue : user?.apellido || ""
-                }
-                readOnly={editField !== "apellido"}
-                onChange={(e) => setEditValue(e.target.value)}
-              />
-              {editField === "apellido" ? (
-                <>
-                  <button
-                    type="button"
-                    className="save-button"
-                    disabled={saving || editValue === user.apellido}
-                    onClick={() => handleSaveField("apellido")}
-                  >
-                    Guardar
-                  </button>
-                  <button
-                    type="button"
-                    className="cancel-button"
-                    disabled={saving}
-                    onClick={() => {
-                      setEditField(null);
-                      setEditValue("");
-                    }}
-                  >
-                    Cancelar
-                  </button>
-                </>
-              ) : (
-                <button
-                  type="button"
-                  className="edit-button"
-                  onClick={() => {
-                    setEditField("apellido");
-                    setEditValue(user.apellido);
-                  }}
-                >
-                  Modificar
-                </button>
-              )}
+              <input type="text" value={user?.apellido || ""} readOnly />
             </div>
 
-            {/* Correo electrónico (no editable) */}
             <div className="form-group">
               <label>Correo electrónico</label>
               <input type="email" value={user?.correo || ""} readOnly />
             </div>
-           
 
-            {/* Contraseña */}
             <div className="form-group">
               <label>Contraseña</label>
-              <input
-                type={editField === "password" ? "text" : "password"}
-                value={editField === "password" ? editValue : "****"}
-                readOnly={editField !== "password"}
-                onChange={(e) => setEditValue(e.target.value)}
-                autoComplete="new-password"
-              />
-              {editField === "password" ? (
-                <>
-                  <button
-                    type="button"
-                    className="save-button"
-                    disabled={saving || !editValue}
-                    onClick={() => handleSaveField("password")}
-                  >
-                    Guardar
-                  </button>
-                  <button
-                    type="button"
-                    className="cancel-button"
-                    disabled={saving}
-                    onClick={() => {
-                      setEditField(null);
-                      setEditValue("");
-                    }}
-                  >
-                    Cancelar
-                  </button>
-                </>
-              ) : (
-                <button
-                  type="button"
-                  className="edit-button"
-                  onClick={() => {
-                    setEditField("password");
-                    setEditValue("");
-                  }}
-                >
-                  Modificar
-                </button>
-              )}
+              <input type="password" value="****" readOnly />
             </div>
+
+            <button type="button" className="save-button" disabled>
+              Guardar Cambios
+            </button>
           </form>
         </div>
 
@@ -434,6 +313,29 @@ const Profile = () => {
                       <strong>Reportado por:</strong> {incident.usuario?.nombre}{" "}
                       {incident.usuario?.apellido}
                     </p>
+
+                    {/* Botón de eliminar */}
+                    <button
+                      className="delete-btn"
+                      title="Eliminar incidente"
+                      onClick={() => handleDeleteIncident(incident.id)}
+                      style={{
+                        background: "none",
+                        border: "none",
+                        cursor: "pointer",
+                        color: "#888",
+                        marginTop: "10px",
+                        display: "flex",
+                        alignItems: "center",
+                        padding: "5px",
+                        borderRadius: "4px"
+                      }}
+                      onMouseOver={e => e.currentTarget.style.color = "#e53e3e"}
+                      onMouseOut={e => e.currentTarget.style.color = "#888"}
+                    >
+                      <Trash2 size={18} style={{ marginRight: "5px" }} />
+                      <span>Eliminar</span>
+                    </button>
                   </div>
                 </div>
               ))
