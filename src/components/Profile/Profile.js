@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, UserCircle, AlertCircle } from "lucide-react";
+import { ArrowLeft, UserCircle, AlertCircle, Trash2 } from "lucide-react";
 import { fetchWithAuth } from "../../services/api";
 import "./Profile.css";
 
@@ -51,26 +51,7 @@ const Profile = () => {
       }
 
       // Actualizar la lista de incidentes
-      const refreshResponse = await fetchWithAuth(
-        "http://localhost:8080/v1/incidentes/all",
-        { method: "GET" }
-      );
-
-      if (!refreshResponse.ok) {
-        throw new Error("Error al recargar los incidentes");
-      }
-      const refreshData = await refreshResponse.json();
-      let incidentesArray = [];
-      if (Array.isArray(refreshData)) {
-        incidentesArray = refreshData;
-      } else if (Array.isArray(refreshData.incidentes)) {
-        incidentesArray = refreshData.incidentes;
-      } else if (Array.isArray(refreshData.data)) {
-        incidentesArray = refreshData.data;
-      } else if (refreshData.content && Array.isArray(refreshData.content)) {
-        incidentesArray = refreshData.content;
-      }
-      setIncidents(incidentesArray);
+      await fetchIncidents();
 
       // Mostrar mensaje de éxito
       alert("Estado actualizado correctamente");
@@ -85,6 +66,93 @@ const Profile = () => {
       }
     }
   };
+
+  // Función para eliminar incidente
+  const handleDeleteIncident = async (incidenteId) => {
+    try {
+      // Confirmar antes de eliminar
+      const confirmDelete = window.confirm("¿Estás seguro de que deseas eliminar este incidente? Esta acción no se puede deshacer.");
+      if (!confirmDelete) return;
+
+      const userId = localStorage.getItem("userId");
+      if (!userId) {
+        navigate("/");
+        throw new Error("No estás autenticado");
+      }
+
+      const response = await fetchWithAuth(
+        `http://localhost:8080/v1/incidentes/${incidenteId}?usuarioId=${userId}`,
+        {
+          method: "DELETE",
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.mensaje || "Error al eliminar el incidente");
+      }
+
+      // Actualizar la lista de incidentes
+      await fetchIncidents();
+
+      // Mostrar mensaje de éxito
+      alert("Incidente eliminado correctamente");
+    } catch (err) {
+      console.error("Error:", err);
+      alert(err.message);
+      if (
+        err.message.includes("autenticación") ||
+        err.message.includes("token")
+      ) {
+        navigate("/");
+      }
+    }
+  };
+
+  // Función para obtener incidentes
+  const fetchIncidents = useCallback(async () => {
+    try {
+      const userId = localStorage.getItem("userId");
+      if (!userId) {
+        navigate("/", { replace: true });
+        return;
+      }
+
+      const incidentsResponse = await fetchWithAuth(
+        `http://localhost:8080/v1/incidentes/usuario/${userId}`,
+        {
+          method: "GET",
+        }
+      );
+
+      if (!incidentsResponse.ok) {
+        if (incidentsResponse.status === 401 || incidentsResponse.status === 403) {
+          throw new Error("Error de autenticación");
+        }
+        throw new Error("Error al cargar los incidentes");
+      }
+
+      const data = await incidentsResponse.json();
+      console.log("Respuesta de incidentes:", data);
+
+      // Extraer el array de incidentes según la estructura de la respuesta
+      let incidentesArray = [];
+      if (Array.isArray(data)) {
+        incidentesArray = data;
+      } else if (Array.isArray(data.incidentes)) {
+        incidentesArray = data.incidentes;
+      } else if (Array.isArray(data.data)) {
+        incidentesArray = data.data;
+      } else if (data.content && Array.isArray(data.content)) {
+        incidentesArray = data.content;
+      }
+
+      setIncidents(incidentesArray);
+    } catch (err) {
+      console.error("Error:", err);
+      throw err;
+    }
+  }, [navigate, setIncidents]); // Dependencias de fetchIncidents
 
   useEffect(() => {
     const fetchUserDataAndIncidents = async () => {
@@ -111,36 +179,7 @@ const Profile = () => {
         setUser(userJson.usuario);
 
         // Obtener incidentes
-        const incidentsResponse = await fetchWithAuth(
-          `http://localhost:8080/v1/incidentes/usuario/${userId}`,
-          {
-            method: "GET",
-          }
-        );
-
-        if (!incidentsResponse.ok) {
-          if (incidentsResponse.status === 401 || incidentsResponse.status === 403) {
-            throw new Error("Error de autenticación");
-          }
-          throw new Error("Error al cargar los incidentes");
-        }
-
-        const data = await incidentsResponse.json();
-        console.log("Respuesta de incidentes:", data);
-
-        // Extraer el array de incidentes según la estructura de la respuesta
-        let incidentesArray = [];
-        if (Array.isArray(data)) {
-          incidentesArray = data;
-        } else if (Array.isArray(data.incidentes)) {
-          incidentesArray = data.incidentes;
-        } else if (Array.isArray(data.data)) {
-          incidentesArray = data.data;
-        } else if (data.content && Array.isArray(data.content)) {
-          incidentesArray = data.content;
-        }
-
-        setIncidents(incidentesArray);
+        await fetchIncidents();
       } catch (err) {
         console.error("Error:", err);
 
@@ -157,7 +196,7 @@ const Profile = () => {
     };
 
     fetchUserDataAndIncidents();
-  }, [navigate]);
+  }, [navigate, fetchIncidents]);
 
   if (loading) {
     return (
@@ -212,7 +251,7 @@ const Profile = () => {
 
             <div className="form-group">
               <label>Contraseña</label>
-              <input type="password" value="********" readOnly />
+              <input type="password" value="****" readOnly />
             </div>
 
             <button type="button" className="save-button" disabled>
@@ -274,6 +313,29 @@ const Profile = () => {
                       <strong>Reportado por:</strong> {incident.usuario?.nombre}{" "}
                       {incident.usuario?.apellido}
                     </p>
+
+                    {/* Botón de eliminar */}
+                    <button
+                      className="delete-btn"
+                      title="Eliminar incidente"
+                      onClick={() => handleDeleteIncident(incident.id)}
+                      style={{
+                        background: "none",
+                        border: "none",
+                        cursor: "pointer",
+                        color: "#888",
+                        marginTop: "10px",
+                        display: "flex",
+                        alignItems: "center",
+                        padding: "5px",
+                        borderRadius: "4px"
+                      }}
+                      onMouseOver={e => e.currentTarget.style.color = "#e53e3e"}
+                      onMouseOut={e => e.currentTarget.style.color = "#888"}
+                    >
+                      <Trash2 size={18} style={{ marginRight: "5px" }} />
+                      <span>Eliminar</span>
+                    </button>
                   </div>
                 </div>
               ))
