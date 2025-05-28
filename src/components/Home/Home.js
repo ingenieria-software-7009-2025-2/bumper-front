@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { MapPin, AlertTriangle, Clock, CheckCircle } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom'; // Eliminamos useNavigate
 import { fetchWithAuth } from '../../services/api';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import './Home.css';
+import IncidentFilterModal from './IncidentFilterModal';
 
 // Función para crear un icono personalizado con SVG inline
 const createSvgIcon = (color, iconType) => {
@@ -52,7 +53,7 @@ const Home = () => {
     enProceso: 0,
     resueltos: 0
   });
-  const navigate = useNavigate();
+  const [modal, setModal] = useState({ open: false, estado: null });
 
   useEffect(() => {
     const obtenerIncidentes = async () => {
@@ -104,8 +105,12 @@ const Home = () => {
     obtenerIncidentes();
   }, []);
 
-  const navegarConFiltro = (estado) => {
-    navigate('/incidents', { state: { filtroEstado: estado } });
+  const abrirModal = (estado) => {
+    setModal({ open: true, estado });
+  };
+
+  const cerrarModal = () => {
+    setModal({ open: false, estado: null });
   };
 
   // Función para formatear fecha y hora
@@ -163,7 +168,7 @@ const Home = () => {
       <div className="stats-grid">
         <div
           className="stat-card"
-          onClick={() => navegarConFiltro("PENDIENTE")}
+          onClick={() => abrirModal("PENDIENTE")}
         >
           <div className="stat-header">
             <AlertTriangle className="stat-icon" />
@@ -174,7 +179,7 @@ const Home = () => {
 
         <div
           className="stat-card"
-          onClick={() => navegarConFiltro("EN_PROCESO")}
+          onClick={() => abrirModal("EN_PROCESO")}
         >
           <div className="stat-header">
             <Clock className="stat-icon" />
@@ -185,7 +190,7 @@ const Home = () => {
 
         <div
           className="stat-card"
-          onClick={() => navegarConFiltro("RESUELTO")}
+          onClick={() => abrirModal("RESUELTO")}
         >
           <div className="stat-header">
             <CheckCircle className="stat-icon" />
@@ -264,6 +269,15 @@ const Home = () => {
           </Link>
         </button>
       </div>
+
+      {/* Modal de filtro */}
+      {modal.open && (
+        <IncidentFilterModal
+          estado={modal.estado}
+          incidentes={incidentes}
+          onClose={cerrarModal}
+        />
+      )}
     </div>
   );
 };
