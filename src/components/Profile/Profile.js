@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, UserCircle, AlertCircle, Trash2 } from "lucide-react";
+import { ArrowLeft, UserCircle, AlertCircle, Trash2, Key } from "lucide-react";
 import { fetchWithAuth } from "../../services/api";
 import "./Profile.css";
 
@@ -10,6 +10,12 @@ const Profile = () => {
   const [incidents, setIncidents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  
+  // Estados para cambio de contraseña
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [passwordLoading, setPasswordLoading] = useState(false);
 
   // Función para formatear fecha y hora
   const formatDateTime = (dateString) => {
@@ -23,6 +29,68 @@ const Profile = () => {
   };
 
   const estadosIncidente = ["PENDIENTE", "EN_PROCESO", "RESUELTO"];
+
+  // Función para manejar el cambio de contraseña
+  const handlePasswordChange = async (e) => {
+    e.preventDefault();
+    
+    if (newPassword !== confirmPassword) {
+      alert("Las contraseñas no coinciden");
+      return;
+    }
+    
+    if (newPassword.length < 6) {
+      alert("La contraseña debe tener al menos 6 caracteres");
+      return;
+    }
+
+    setPasswordLoading(true);
+    
+    try {
+      const userId = localStorage.getItem("userId");
+      if (!userId) {
+        navigate("/");
+        throw new Error("No estás autenticado");
+      }
+
+      const response = await fetchWithAuth(
+        "http://localhost:8080/v1/users/update-password",
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            id: parseInt(userId),
+            nuevaPassword: newPassword
+          }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.mensaje || "Error al actualizar la contraseña");
+      }
+
+      alert("Contraseña actualizada correctamente");
+      setShowPasswordModal(false);
+      setNewPassword("");
+      setConfirmPassword("");
+      
+    } catch (err) {
+      console.error("Error:", err);
+      alert(err.message);
+      if (
+        err.message.includes("autenticación") ||
+        err.message.includes("token")
+      ) {
+        navigate("/");
+      }
+    } finally {
+      setPasswordLoading(false);
+    }
+  };
 
   // Función para manejar el cambio de estado
   const handleEstadoChange = async (incidenteId, nuevoEstado) => {
@@ -152,7 +220,7 @@ const Profile = () => {
       console.error("Error:", err);
       throw err;
     }
-  }, [navigate, setIncidents]); // Dependencias de fetchIncidents
+  }, [navigate, setIncidents]);
 
   useEffect(() => {
     const fetchUserDataAndIncidents = async () => {
@@ -251,12 +319,18 @@ const Profile = () => {
 
             <div className="form-group">
               <label>Contraseña</label>
-              <input type="password" value="****" readOnly />
+              <div className="password-field">
+                <input type="password" value="****" readOnly />
+                <button 
+                  type="button" 
+                  className="change-password-btn"
+                  onClick={() => setShowPasswordModal(true)}
+                >
+                  <Key size={16} />
+                  Cambiar
+                </button>
+              </div>
             </div>
-
-            <button type="button" className="save-button" disabled>
-              Guardar Cambios
-            </button>
           </form>
         </div>
 
@@ -343,6 +417,60 @@ const Profile = () => {
           </div>
         </div>
       </div>
+
+      {/* Modal para cambiar contraseña */}
+      {showPasswordModal && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <h3>Cambiar Contraseña</h3>
+            <form onSubmit={handlePasswordChange}>
+              <div className="form-group">
+                <label>Nueva Contraseña</label>
+                <input
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  required
+                  minLength={6}
+                  placeholder="Mínimo 6 caracteres"
+                />
+              </div>
+              <div className="form-group">
+                <label>Confirmar Contraseña</label>
+                <input
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  required
+                  minLength={6}
+                  placeholder="Confirma tu nueva contraseña"
+                />
+              </div>
+              <div className="modal-buttons">
+                <button
+                  type="button"
+                  className="cancel-btn"
+                  onClick={() => {
+                    setShowPasswordModal(false);
+                    setNewPassword("");
+                    setConfirmPassword("");
+                  }}
+                  disabled={passwordLoading}
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="save-btn"
+                  disabled={passwordLoading}
+                >
+                  {passwordLoading ? "Guardando..." : "Guardar"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
