@@ -5,6 +5,7 @@ import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import './IncidentFilterModal.css';
+import html2canvas from 'html2canvas'; // Importa html2canvas
 
 // Función para crear un icono personalizado con SVG inline
 const createSvgIcon = (color, iconType) => {
@@ -22,7 +23,7 @@ const createSvgIcon = (color, iconType) => {
     default:
       svgPath = 'M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10zm0-14v4m0 4h.01'; // HelpCircle
   }
-  
+
   const svgHtml = `
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
       <path d="${svgPath}"></path>
@@ -40,10 +41,14 @@ const createSvgIcon = (color, iconType) => {
 
 const getColorByState = (estado) => {
   switch (estado) {
-    case 'PENDIENTE':   return '#ff6b6b';
-    case 'EN_PROCESO':  return '#feca57';
-    case 'RESUELTO':    return '#1dd1a1';
-    default:            return '#4a90e2';
+    case 'PENDIENTE':
+      return '#ff6b6b';
+    case 'EN_PROCESO':
+      return '#feca57';
+    case 'RESUELTO':
+      return '#1dd1a1';
+    default:
+      return '#4a90e2';
   }
 };
 
@@ -69,9 +74,9 @@ const IncidentFilterModal = ({ estado, incidentes, onClose }) => {
     EN_PROCESO: 'En Proceso',
     RESUELTO: 'Resueltos'
   };
-  
+
   const filtered = incidentes.filter((i) => i.estado === estado);
-  
+
   // Prevenir scroll del body cuando el modal está abierto
   useEffect(() => {
     document.body.style.overflow = 'hidden';
@@ -83,12 +88,27 @@ const IncidentFilterModal = ({ estado, incidentes, onClose }) => {
   // Calcular el centro del mapa basado en los incidentes filtrados
   const getMapCenter = () => {
     if (filtered.length === 0) return [19.4326, -99.1332]; // Default: CDMX
-    
+
     // Calcular el promedio de latitudes y longitudes
     const sumLat = filtered.reduce((sum, inc) => sum + inc.latitud, 0);
     const sumLng = filtered.reduce((sum, inc) => sum + inc.longitud, 0);
-    
-    return [sumLat / filtered.length, sumLng / filtered.length];
+
+    // Verificar si sumLat y sumLng son NaN antes de dividir
+    const centerLat = isNaN(sumLat / filtered.length) ? 19.4326 : sumLat / filtered.length;
+    const centerLng = isNaN(sumLng / filtered.length) ? -99.1332 : sumLng / filtered.length;
+
+    return [centerLat, centerLng];
+  };
+
+  // Función para descargar la imagen del popup
+  const handleDescargarImagen = (id) => {
+    const node = document.getElementById(`popup-share-${id}`);
+    html2canvas(node).then((canvas) => {
+      const link = document.createElement('a');
+      link.download = `incidente_${id}.png`;
+      link.href = canvas.toDataURL();
+      link.click();
+    });
   };
 
   return (
@@ -108,19 +128,19 @@ const IncidentFilterModal = ({ estado, incidentes, onClose }) => {
         {/* Leyenda de tipos */}
         <div className="legend-row">
           <div style={{ display: 'flex', alignItems: 'center', marginRight: '12px' }}>
-            <Lightbulb size={18} style={{ marginRight: '4px' }} /> 
+            <Lightbulb size={18} style={{ marginRight: '4px' }} />
             <span>Iluminación</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', marginRight: '12px' }}>
-            <AlertTriangle size={18} style={{ marginRight: '4px' }} /> 
+            <AlertTriangle size={18} style={{ marginRight: '4px' }} />
             <span>Baches</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', marginRight: '12px' }}>
-            <Trash2 size={18} style={{ marginRight: '4px' }} /> 
+            <Trash2 size={18} style={{ marginRight: '4px' }} />
             <span>Basura</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center' }}>
-            <HelpCircle size={18} style={{ marginRight: '4px' }} /> 
+            <HelpCircle size={18} style={{ marginRight: '4px' }} />
             <span>Otro</span>
           </div>
         </div>
@@ -148,7 +168,7 @@ const IncidentFilterModal = ({ estado, incidentes, onClose }) => {
                 icon={getIncidentIcon(incident)}
               >
                 <Popup>
-                  <div className="incident-popup">
+                  <div className="incident-popup" id={`popup-share-${incident.id}`}>
                     <h3>{incident.tipoIncidente}</h3>
                     <p><strong>Ubicación:</strong> {incident.ubicacion}</p>
                     <p><strong>Estado:</strong> {incident.estado}</p>
@@ -159,6 +179,19 @@ const IncidentFilterModal = ({ estado, incidentes, onClose }) => {
                         ? `${incident.usuario.nombre || ""} ${incident.usuario.apellido || ""}`
                         : "Desconocido"}
                     </p>
+                    <div className="popup-leyenda">
+                      ¡Comparte y ayuda a tu comunidad!
+                    </div>
+                    <div className="popup-hashtag">
+                      #cuidatuciudad
+                    </div>
+                    <img src="/logo.png" alt="Logo App" className="popup-logo" />
+                    <button
+                      className="descargar-imagen-btn"
+                      onClick={() => handleDescargarImagen(incident.id)}
+                    >
+                      Descargar Imagen
+                    </button>
                   </div>
                 </Popup>
               </Marker>

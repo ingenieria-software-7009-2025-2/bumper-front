@@ -9,6 +9,7 @@
     "@testing-library/user-event": "^13.5.0",
     "@types/leaflet": "^1.9.17",
     "bumperapp": "file:",
+    "html2canvas": "^1.4.1",
     "leaflet": "^1.9.4",
     "lucide-react": "^0.483.0",
     "react": "^19.0.0",

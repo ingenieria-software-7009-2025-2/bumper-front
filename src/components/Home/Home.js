@@ -7,6 +7,7 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import './Home.css';
 import IncidentFilterModal from './IncidentFilterModal';
+import html2canvas from "html2canvas";
 
 // Función para crear un icono personalizado con SVG inline
 const createSvgIcon = (color, iconType) => {
@@ -138,6 +139,16 @@ const Home = () => {
     }
   };
 
+  function handleDescargarImagen(id) {
+  const node = document.getElementById(`popup-share-${id}`);
+  html2canvas(node).then(canvas => {
+    const link = document.createElement("a");
+    link.download = `incidente_${id}.png`;
+    link.href = canvas.toDataURL();
+    link.click();
+  });
+}
+
   // Función para obtener el icono según el tipo y estado
   const getIncidentIcon = (incident) => {
     const color = getColorByState(incident.estado);
@@ -155,6 +166,8 @@ const Home = () => {
       </div>
     );
   }
+
+  
 
   return (
     <div className="dashboard-container">
@@ -203,9 +216,27 @@ const Home = () => {
       {/* Mapa */}
       <div className="map-section">
         <div className="map-header">
-          <MapPin className="map-icon" />
-          <h2>Incidentes Recientes</h2>
+  <MapPin className="map-icon" />
+  <h2>Incidentes Recientes</h2>
+  <span className="map-tip">Haz click en los iconos para ver más información</span>
+
+  <div className="map-legend">          
+          <div className="legend-items">
+            <div className="legend-item">
+              <div className="legend-color" style={{backgroundColor: '#ff6b6b'}}></div>
+              <span>Pendiente</span>
+            </div>
+            <div className="legend-item">
+              <div className="legend-color" style={{backgroundColor: '#feca57'}}></div>
+              <span>En Proceso</span>
+            </div>
+            <div className="legend-item">
+              <div className="legend-color" style={{backgroundColor: '#1dd1a1'}}></div>
+              <span>Resuelto</span>
+            </div>
+          </div>
         </div>
+</div>
         <div className="incidents-map-container">
           <MapContainer
             center={[19.4326, -99.1332]}
@@ -223,40 +254,38 @@ const Home = () => {
                 icon={getIncidentIcon(incident)}
               >
                 <Popup>
-                  <div className="incident-popup">
-                    <h3>{incident.tipoIncidente}</h3>
-                    <p><strong>Ubicación:</strong> {incident.ubicacion}</p>
-                    <p><strong>Estado:</strong> {incident.estado}</p>
-                    <p><strong>Fecha:</strong> {formatDateTime(incident.horaIncidente)}</p>
-                    <p>
-                      <strong>Reportado por:</strong>{" "}
-                      {incident.usuario
-                        ? `${incident.usuario.nombre || ""} ${incident.usuario.apellido || ""}`
-                        : "Desconocido"}
-                    </p>
-                  </div>
-                </Popup>
+  <div className="incident-popup" id={`popup-share-${incident.id}`}>
+    <h3>{incident.tipoIncidente}</h3>
+    <p><strong>Ubicación:</strong> {incident.ubicacion}</p>
+    <p><strong>Estado:</strong> {incident.estado}</p>
+    <p><strong>Fecha:</strong> {formatDateTime(incident.horaIncidente)}</p>
+    <p>
+      <strong>Reportado por:</strong>{" "}
+      {incident.usuario
+        ? `${incident.usuario.nombre || ""} ${incident.usuario.apellido || ""}`
+        : "Desconocido"}
+    </p>
+    <div className="popup-leyenda">
+      ¡Comparte y ayuda a tu comunidad!
+    </div>
+    <div className="popup-hashtag">
+      #cuidatuciudad
+    </div>
+    <img src="/logo.png" alt="Logo App" className="popup-logo" />
+    <button
+      className="descargar-imagen-btn"
+      onClick={() => handleDescargarImagen(incident.id)}
+    >
+      Descargar Imagen
+    </button>
+  </div>
+</Popup>
               </Marker>
             ))}
           </MapContainer>
+          
         </div>
-        <div className="map-legend">
-          <h4>Leyenda</h4>
-          <div className="legend-items">
-            <div className="legend-item">
-              <div className="legend-color" style={{backgroundColor: '#ff6b6b'}}></div>
-              <span>Pendiente</span>
-            </div>
-            <div className="legend-item">
-              <div className="legend-color" style={{backgroundColor: '#feca57'}}></div>
-              <span>En Proceso</span>
-            </div>
-            <div className="legend-item">
-              <div className="legend-color" style={{backgroundColor: '#1dd1a1'}}></div>
-              <span>Resuelto</span>
-            </div>
-          </div>
-        </div>
+        
       </div>
 
       {/* Botón de Acción */}
