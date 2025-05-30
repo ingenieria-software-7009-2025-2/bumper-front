@@ -131,7 +131,7 @@
   margin: 40px 0 0 0;
 }
 .report-button {
-  background: linear-gradient(90deg, #0077b6 0%, #00b4d8 100%);
+  background: #0077b6;
   color: #fff;
   border: none;
   border-radius: 8px;

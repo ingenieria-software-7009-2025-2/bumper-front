@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { MapPin, AlertTriangle, Clock, CheckCircle } from 'lucide-react';
-import { Link } from 'react-router-dom'; // Eliminamos useNavigate
+import { Link } from 'react-router-dom';
 import { fetchWithAuth } from '../../services/api';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
@@ -13,7 +13,7 @@ import html2canvas from "html2canvas";
 const createSvgIcon = (color, iconType) => {
   // Definir el SVG según el tipo de incidente
   let svgPath;
-  
+
   switch (iconType) {
     case 'ILUMINACION':
       svgPath = 'M12 7a5 5 0 1 0 0 10 5 5 0 0 0 0-10zm0 16a1 1 0 0 1-1-1v-2a1 1 0 0 1 2 0v2a1 1 0 0 1-1 1zm-8-9a1 1 0 0 1-1-1 1 1 0 0 1 1-1h2a1 1 0 0 1 0 2H4zm16-1a1 1 0 0 1 0-2h2a1 1 0 0 1 0 2h-2zM6.34 17.66a1 1 0 0 1-1.41-1.41l1.41-1.41a1 1 0 0 1 1.41 1.41l-1.41 1.41zm12.73-12.73a1 1 0 0 1-1.41 0L16.24 3.51a1 1 0 0 1 1.41-1.41l1.42 1.42a1 1 0 0 1 0 1.41zm-14.14 0a1 1 0 0 1 0-1.41L6.34 2.1a1 1 0 0 1 1.41 1.41L6.34 4.93a1 1 0 0 1-1.41 0zM12 2a1 1 0 0 1 1 1v2a1 1 0 0 1-2 0V3a1 1 0 0 1 1-1zm5.66 15.66l1.41 1.41a1 1 0 0 1-1.41 1.41l-1.41-1.41a1 1 0 0 1 1.41-1.41z'; // Lightbulb
@@ -140,14 +140,14 @@ const Home = () => {
   };
 
   function handleDescargarImagen(id) {
-  const node = document.getElementById(`popup-share-${id}`);
-  html2canvas(node).then(canvas => {
-    const link = document.createElement("a");
-    link.download = `incidente_${id}.png`;
-    link.href = canvas.toDataURL();
-    link.click();
-  });
-}
+    const node = document.getElementById(`popup-share-${id}`);
+    html2canvas(node).then(canvas => {
+      const link = document.createElement("a");
+      link.download = `incidente_${id}.png`;
+      link.href = canvas.toDataURL();
+      link.click();
+    });
+  }
 
   // Función para obtener el icono según el tipo y estado
   const getIncidentIcon = (incident) => {
@@ -166,8 +166,6 @@ const Home = () => {
       </div>
     );
   }
-
-  
 
   return (
     <div className="dashboard-container">
@@ -216,27 +214,27 @@ const Home = () => {
       {/* Mapa */}
       <div className="map-section">
         <div className="map-header">
-  <MapPin className="map-icon" />
-  <h2>Incidentes Recientes</h2>
-  <span className="map-tip">Haz click en los iconos para ver más información</span>
+          <MapPin className="map-icon" />
+          <h2>Incidentes Recientes</h2>
+          <span className="map-tip">Haz click en los iconos para ver más información</span>
 
-  <div className="map-legend">          
-          <div className="legend-items">
-            <div className="legend-item">
-              <div className="legend-color" style={{backgroundColor: '#ff6b6b'}}></div>
-              <span>Pendiente</span>
-            </div>
-            <div className="legend-item">
-              <div className="legend-color" style={{backgroundColor: '#feca57'}}></div>
-              <span>En Proceso</span>
-            </div>
-            <div className="legend-item">
-              <div className="legend-color" style={{backgroundColor: '#1dd1a1'}}></div>
-              <span>Resuelto</span>
+          <div className="map-legend">
+            <div className="legend-items">
+              <div className="legend-item">
+                <div className="legend-color" style={{ backgroundColor: '#ff6b6b' }}></div>
+                <span>Pendiente</span>
+              </div>
+              <div className="legend-item">
+                <div className="legend-color" style={{ backgroundColor: '#feca57' }}></div>
+                <span>En Proceso</span>
+              </div>
+              <div className="legend-item">
+                <div className="legend-color" style={{ backgroundColor: '#1dd1a1' }}></div>
+                <span>Resuelto</span>
+              </div>
             </div>
           </div>
         </div>
-</div>
         <div className="incidents-map-container">
           <MapContainer
             center={[19.4326, -99.1332]}
@@ -254,49 +252,47 @@ const Home = () => {
                 icon={getIncidentIcon(incident)}
               >
                 <Popup>
-  <div className="incident-popup" id={`popup-share-${incident.id}`}>
-    <h3>{incident.tipoIncidente}</h3>
-    <p><strong>Ubicación:</strong> {incident.ubicacion}</p>
-    <p><strong>Estado:</strong> {incident.estado}</p>
-    <p><strong>Fecha:</strong> {formatDateTime(incident.horaIncidente)}</p>
-    <p>
-      <strong>Reportado por:</strong>{" "}
-      {incident.usuario
-        ? `${incident.usuario.nombre || ""} ${incident.usuario.apellido || ""}`
-        : "Desconocido"}
-    </p>
-    <div className="popup-leyenda">
-      ¡Comparte y ayuda a tu comunidad!
-    </div>
-    <div className="popup-hashtag">
-      #cuidatuciudad
-    </div>
-    <img src="/logo.png" alt="Logo App" className="popup-logo" />
-    <button
-      className="descargar-imagen-btn"
-      onClick={() => handleDescargarImagen(incident.id)}
-    >
-      Descargar Imagen
-    </button>
-  </div>
-</Popup>
+                  <div className="incident-popup" id={`popup-share-${incident.id}`}>
+                    <h3>{incident.tipoIncidente}</h3>
+                    <p><strong>Ubicación:</strong> {incident.ubicacion}</p>
+                    <p><strong>Estado:</strong> {incident.estado}</p>
+                    <p><strong>Fecha:</strong> {formatDateTime(incident.horaIncidente)}</p>
+                    <p>
+                      <strong>Reportado por:</strong>{" "}
+                      {incident.usuario
+                        ? `${incident.usuario.nombre || ""} ${incident.usuario.apellido || ""}`
+                        : "Desconocido"}
+                    </p>
+                    <div className="popup-leyenda">
+                      ¡Comparte y ayuda a tu comunidad!
+                    </div>
+                    <div className="popup-hashtag">
+                      #cuidatuciudad
+                    </div>
+                    <img src="/logo.png" alt="Logo App" className="popup-logo" />
+                    <button
+                      className="descargar-imagen-btn"
+                      onClick={() => handleDescargarImagen(incident.id)}
+                    >
+                      Descargar Imagen
+                    </button>
+                  </div>
+                </Popup>
               </Marker>
             ))}
           </MapContainer>
-          
+
         </div>
-        
+
       </div>
 
       {/* Botón de Acción */}
       <div className="cta-section">
         <h2>¿Detectaste algún problema en tu zona?</h2>
         <p>Ayuda a tu comunidad reportando incidentes para que podamos trabajar en solucionarlos.</p>
-        <button className="report-button">
-          <Link to="/incidents" className="report-button">
-            Reportar Incidente
-          </Link>
-        </button>
+        <Link to="/incidents" className="report-button">
+          Reportar Incidente
+        </Link>
       </div>
 
       {/* Modal de filtro */}

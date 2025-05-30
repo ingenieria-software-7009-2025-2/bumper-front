@@ -17,7 +17,7 @@ export const fetchWithAuth = async (url, options = {}) => {
     if (response.status === 401) {
       localStorage.clear();
       window.location.href = '/login';
-      throw new Error('Sesión expirada');
+      throw new Error('Credenciales inválidas. Por favor, inicia sesión nuevamente.');
     }
   
     return response;
