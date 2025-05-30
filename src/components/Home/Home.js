@@ -274,7 +274,7 @@ const Home = () => {
                     <div className="popup-hashtag">
                       #cuidatuciudad
                     </div>
-                    <img src="/logo.png" alt="Logo App" className="popup-logo" />
+                    <img src="https://cdn.glitch.global/1e606ae4-8295-4215-9b27-e8171201367a/LOGOBUMPER.png?v=1748621862361" alt="Logo App" className="popup-logo" />
                     <button
                       className="descargar-imagen-btn"
                       onClick={() => handleDescargarImagen(incident.id)}
