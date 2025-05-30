@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ArrowLeft, UserCircle, AlertCircle, Trash2, Key } from "lucide-react";
 import { fetchWithAuth } from "../../services/api";
+import Swal from 'sweetalert2';
 import "./Profile.css";
 
 const Profile = () => {
@@ -35,12 +36,22 @@ const Profile = () => {
     e.preventDefault();
     
     if (newPassword !== confirmPassword) {
-      alert("Las contraseñas no coinciden");
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'Las contraseñas no coinciden',
+        confirmButtonColor: '#3085d6'
+      });
       return;
     }
     
     if (newPassword.length < 6) {
-      alert("La contraseña debe tener al menos 6 caracteres");
+      Swal.fire({
+        icon: 'warning',
+        title: 'Contraseña insegura',
+        text: 'La contraseña debe tener al menos 6 caracteres',
+        confirmButtonColor: '#3085d6'
+      });
       return;
     }
 
@@ -73,14 +84,28 @@ const Profile = () => {
         throw new Error(data.mensaje || "Error al actualizar la contraseña");
       }
 
-      alert("Contraseña actualizada correctamente");
+      await Swal.fire({
+        icon: 'success',
+        title: '¡Éxito!',
+        text: 'Contraseña actualizada correctamente',
+        confirmButtonColor: '#28a745',
+        timer: 2000,
+        timerProgressBar: true
+      });
+      
       setShowPasswordModal(false);
       setNewPassword("");
       setConfirmPassword("");
       
     } catch (err) {
       console.error("Error:", err);
-      alert(err.message);
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: err.message,
+        confirmButtonColor: '#dc3545'
+      });
+      
       if (
         err.message.includes("autenticación") ||
         err.message.includes("token")
@@ -121,11 +146,25 @@ const Profile = () => {
       // Actualizar la lista de incidentes
       await fetchIncidents();
 
-      // Mostrar mensaje de éxito
-      alert("Estado actualizado correctamente");
+      // Mostrar mensaje de éxito con SweetAlert
+      await Swal.fire({
+        icon: 'success',
+        title: '¡Éxito!',
+        text: 'Estado actualizado correctamente',
+        confirmButtonColor: '#28a745',
+        timer: 2000,
+        timerProgressBar: true
+      });
+      
     } catch (err) {
       console.error("Error:", err);
-      alert(err.message);
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: err.message,
+        confirmButtonColor: '#dc3545'
+      });
+      
       if (
         err.message.includes("autenticación") ||
         err.message.includes("token")
@@ -138,9 +177,19 @@ const Profile = () => {
   // Función para eliminar incidente
   const handleDeleteIncident = async (incidenteId) => {
     try {
-      // Confirmar antes de eliminar
-      const confirmDelete = window.confirm("¿Estás seguro de que deseas eliminar este incidente? Esta acción no se puede deshacer.");
-      if (!confirmDelete) return;
+      // Confirmar antes de eliminar con SweetAlert
+      const result = await Swal.fire({
+        title: '¿Estás seguro?',
+        text: "¿Deseas eliminar este incidente? Esta acción no se puede deshacer.",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'Sí, eliminar',
+        cancelButtonText: 'Cancelar'
+      });
+      
+      if (!result.isConfirmed) return;
 
       const userId = localStorage.getItem("userId");
       if (!userId) {
@@ -163,11 +212,25 @@ const Profile = () => {
       // Actualizar la lista de incidentes
       await fetchIncidents();
 
-      // Mostrar mensaje de éxito
-      alert("Incidente eliminado correctamente");
+      // Mostrar mensaje de éxito con SweetAlert
+      await Swal.fire({
+        icon: 'success',
+        title: 'Eliminado',
+        text: 'Incidente eliminado correctamente',
+        confirmButtonColor: '#28a745',
+        timer: 2000,
+        timerProgressBar: true
+      });
+      
     } catch (err) {
       console.error("Error:", err);
-      alert(err.message);
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: err.message,
+        confirmButtonColor: '#dc3545'
+      });
+      
       if (
         err.message.includes("autenticación") ||
         err.message.includes("token")

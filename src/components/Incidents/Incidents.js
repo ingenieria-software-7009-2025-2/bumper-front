@@ -5,6 +5,7 @@ import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import { fetchWithAuth } from "../../services/api";
 import LocationPicker from './LocationPicker';
 import L from 'leaflet';
+import Swal from 'sweetalert2';
 import 'leaflet/dist/leaflet.css';
 import "./Incidents.css";
 
@@ -113,13 +114,21 @@ const Incidents = () => {
     },
     (error) => {
     console.error("Error obteniendo ubicación:", error);
-    setError(
-    "No se pudo obtener la ubicación actual. Por favor, intente de nuevo."
-    );
+    Swal.fire({
+      icon: 'error',
+      title: 'Error de ubicación',
+      text: 'No se pudo obtener la ubicación actual. Por favor, intente de nuevo.',
+      confirmButtonColor: '#3085d6'
+    });
     }
     );
     } else {
-    setError("Geolocalización no está disponible en este navegador.");
+    Swal.fire({
+      icon: 'warning',
+      title: 'Geolocalización no disponible',
+      text: 'Geolocalización no está disponible en este navegador.',
+      confirmButtonColor: '#3085d6'
+    });
     }
   };
 
@@ -193,7 +202,12 @@ const Incidents = () => {
     setError("");
 
     if (!selectedLocation && !formData.latitude && !formData.longitude) {
-    setError("Por favor selecciona una ubicación en el mapa o ingresa las coordenadas manualmente");
+    Swal.fire({
+      icon: 'warning',
+      title: 'Ubicación requerida',
+      text: 'Por favor selecciona una ubicación en el mapa o ingresa las coordenadas manualmente',
+      confirmButtonColor: '#3085d6'
+    });
     return;
     }
 
@@ -234,8 +248,15 @@ const Incidents = () => {
     );
     }
 
-    // Mostrar mensaje de éxito
-    alert("Incidente reportado exitosamente");
+    // Mostrar mensaje de éxito con SweetAlert
+    await Swal.fire({
+      icon: 'success',
+      title: '¡Éxito!',
+      text: 'Incidente reportado exitosamente',
+      confirmButtonColor: '#28a745',
+      timer: 2000,
+      timerProgressBar: true
+    });
 
     // Recargar la lista de incidentes
     const refreshResponse = await fetchWithAuth(
@@ -273,6 +294,15 @@ const Incidents = () => {
 
     } catch (err) {
     console.error("Error completo:", err);
+    
+    // Mostrar error con SweetAlert
+    Swal.fire({
+      icon: 'error',
+      title: 'Error',
+      text: err.message,
+      confirmButtonColor: '#dc3545'
+    });
+    
     setError(err.message);
     if (
     err.message.includes("autenticación") ||
